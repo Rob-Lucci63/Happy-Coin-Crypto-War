@@ -9,78 +9,65 @@
       color: #fff;
       font-family: "Vazir", sans-serif;
       text-align: center;
+      padding: 0;
+      margin: 0;
+    }
+
+    #startSection {
+      height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      margin: 0;
     }
 
     h1 {
       font-size: 40px;
-      margin-bottom: 20px;
     }
 
-    #startBtn {
-      padding: 12px 30px;
+    button {
+      margin-top: 20px;
+      padding: 12px 25px;
       font-size: 18px;
       background-color: #00ffcc;
       color: #000;
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      transition: 0.3s;
     }
 
-    #startBtn:hover {
-      background-color: #00e6b0;
-    }
-
-    #loadingBox {
-      margin-top: 30px;
+    #chatSection {
       display: none;
-      font-size: 20px;
+      height: 100vh;
     }
 
-    .loading {
-      margin: 20px auto;
-      width: 40px;
-      height: 40px;
-      border: 5px solid #ffffff;
-      border-top: 5px solid #00ffcc;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
     }
   </style>
 </head>
 <body>
-  <h1>به One Ai خوش اومدی 🤖</h1>
-  <button id="startBtn">شروع چت</button>
 
-  <div id="loadingBox">
-    <p>در حال اتصال به چت...</p>
-    <div class="loading"></div>
+  <div id="startSection">
+    <h1>به One Ai خوش اومدی 🤖</h1>
+    <button onclick="startChat()">شروع چت</button>
+  </div>
+
+  <div id="chatSection">
+    <p style="padding:10px;">در حال بارگذاری چت...</p>
+    <iframe id="chatFrame" src=""></iframe>
   </div>
 
   <script>
-    document.getElementById("startBtn").addEventListener("click", function() {
-      // مخفی کردن دکمه
-      this.style.display = "none";
-      
-      // نشون دادن پیام انتقال و لودینگ
-      document.getElementById("loadingBox").style.display = "block";
-      
-      // بعد ۵ ثانیه انتقال بده به سایت اصلیت
-      setTimeout(function() {
-        window.location.href = "https://fxo.io/m/didactic-managed-6825";
-      }, 5000);
-    });
+    function startChat() {
+      document.getElementById("startSection").style.display = "none";
+      document.getElementById("chatSection").style.display = "block";
+
+      // نمایش سایت چت داخل iframe
+      document.getElementById("chatFrame").src = "https://fxo.io/m/didactic-managed-6825";
+    }
   </script>
 </body>
 </html>
