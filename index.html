@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <title>One Ai - شروع چت</title>
+  <style>
+    body {
+      background: #121212;
+      color: #fff;
+      font-family: "Vazir", sans-serif;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 40px;
+      margin-bottom: 20px;
+    }
+
+    #startBtn {
+      padding: 12px 30px;
+      font-size: 18px;
+      background-color: #00ffcc;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    #startBtn:hover {
+      background-color: #00e6b0;
+    }
+
+    #loadingBox {
+      margin-top: 30px;
+      display: none;
+      font-size: 20px;
+    }
+
+    .loading {
+      margin: 20px auto;
+      width: 40px;
+      height: 40px;
+      border: 5px solid #ffffff;
+      border-top: 5px solid #00ffcc;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <h1>به One Ai خوش اومدی 🤖</h1>
+  <button id="startBtn">شروع چت</button>
+
+  <div id="loadingBox">
+    <p>در حال اتصال به چت...</p>
+    <div class="loading"></div>
+  </div>
+
+  <script>
+    document.getElementById("startBtn").addEventListener("click", function() {
+      // مخفی کردن دکمه
+      this.style.display = "none";
+      
+      // نشون دادن پیام انتقال و لودینگ
+      document.getElementById("loadingBox").style.display = "block";
+      
+      // بعد ۵ ثانیه انتقال بده به سایت اصلیت
+      setTimeout(function() {
+        window.location.href = "https://fxo.io/m/didactic-managed-6825";
+      }, 5000);
+    });
+  </script>
+</body>
+</html>
