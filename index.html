@@ -2,33 +2,41 @@
 <html lang="fa">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>One Ai - شروع چت</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       background: #121212;
       color: #fff;
       font-family: "Vazir", sans-serif;
       text-align: center;
-      padding: 0;
       margin: 0;
+      padding: 0;
     }
 
     #startSection {
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
+      padding: 20px;
     }
 
     h1 {
-      font-size: 40px;
+      font-size: 6vw; /* واکنش‌گرا برای سایز تیتر */
+      margin-bottom: 20px;
     }
 
     button {
-      margin-top: 20px;
-      padding: 12px 25px;
-      font-size: 18px;
+      padding: 12px 30px;
+      font-size: 5vw;
+      max-width: 300px;
+      width: 80%;
       background-color: #00ffcc;
       color: #000;
       border: none;
@@ -39,6 +47,7 @@
     #chatSection {
       display: none;
       height: 100vh;
+      width: 100%;
     }
 
     iframe {
@@ -46,17 +55,35 @@
       height: 100%;
       border: none;
     }
+
+    p {
+      padding: 10px;
+      font-size: 4vw;
+    }
+
+    @media (min-width: 768px) {
+      h1 {
+        font-size: 36px;
+      }
+      button {
+        font-size: 18px;
+      }
+      p {
+        font-size: 16px;
+      }
+    }
   </style>
 </head>
 <body>
 
   <div id="startSection">
-    <h1>به One Ai خوش اومدی 🤖</h1>
+    <h1>One Ai
+      Rob Lucci ساخته شده توسط</h1>
     <button onclick="startChat()">شروع چت</button>
   </div>
 
   <div id="chatSection">
-    <p style="padding:10px;">در حال بارگذاری چت...</p>
+    <p>در حال بارگذاری چت...</p>
     <iframe id="chatFrame" src=""></iframe>
   </div>
 
@@ -64,8 +91,6 @@
     function startChat() {
       document.getElementById("startSection").style.display = "none";
       document.getElementById("chatSection").style.display = "block";
-
-      // نمایش سایت چت داخل iframe
       document.getElementById("chatFrame").src = "https://fxo.io/m/didactic-managed-6825";
     }
   </script>
