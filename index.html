@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="fa">
+<html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>One Ai - شروع چت</title>
+  <!-- فونت Vazir -->
+  <link href="https://cdn.fontcdn.ir/Font/Persian/Vazir/Vazir.css" rel="stylesheet">
   <style>
     * {
       box-sizing: border-box;
@@ -28,8 +30,9 @@
     }
 
     h1 {
-      font-size: 6vw; /* واکنش‌گرا برای سایز تیتر */
+      font-size: 6vw;
       margin-bottom: 20px;
+      line-height: 1.6;
     }
 
     button {
@@ -42,21 +45,30 @@
       border: none;
       border-radius: 10px;
       cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background-color: #00ddb3;
     }
 
     #chatSection {
       display: none;
       height: 100vh;
       width: 100%;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     iframe {
       width: 100%;
       height: 100%;
       border: none;
+      display: none; /* تا وقتی لود نشه نمایش داده نشه */
     }
 
-    p {
+    p.loadingText {
       padding: 10px;
       font-size: 4vw;
     }
@@ -68,7 +80,7 @@
       button {
         font-size: 18px;
       }
-      p {
+      p.loadingText {
         font-size: 16px;
       }
     }
@@ -77,22 +89,31 @@
 <body>
 
   <div id="startSection">
-    <h1>One Ai
-      Rob Lucci ساخته شده توسط</h1>
+    <h1>One Ai<br>ساخته شده توسط Rob Lucci</h1>
     <button onclick="startChat()">شروع چت</button>
   </div>
 
   <div id="chatSection">
-    <p>در حال بارگذاری چت...</p>
-    <iframe id="chatFrame" src=""></iframe>
+    <p id="loadingText" class="loadingText">در حال بارگذاری چت...</p>
+    <iframe id="chatFrame" src="" onload="chatLoaded()" onerror="chatError()"></iframe>
   </div>
 
   <script>
     function startChat() {
       document.getElementById("startSection").style.display = "none";
-      document.getElementById("chatSection").style.display = "block";
+      document.getElementById("chatSection").style.display = "flex";
       document.getElementById("chatFrame").src = "https://fxo.io/m/didactic-managed-6825";
     }
+
+    function chatLoaded() {
+      document.getElementById("loadingText").style.display = "none";
+      document.getElementById("chatFrame").style.display = "block";
+    }
+
+    function chatError() {
+      document.getElementById("loadingText").innerText = "مشکلی در بارگذاری چت پیش آمد ☹️";
+    }
   </script>
+
 </body>
 </html>
