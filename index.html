@@ -52,36 +52,12 @@
       background-color: #00ddb3;
     }
 
-    #chatSection {
-      display: none;
-      height: 100vh;
-      width: 100%;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: none; /* تا وقتی لود نشه نمایش داده نشه */
-    }
-
-    p.loadingText {
-      padding: 10px;
-      font-size: 4vw;
-    }
-
     @media (min-width: 768px) {
       h1 {
         font-size: 36px;
       }
       button {
         font-size: 18px;
-      }
-      p.loadingText {
-        font-size: 16px;
       }
     }
   </style>
@@ -93,25 +69,10 @@
     <button onclick="startChat()">شروع چت</button>
   </div>
 
-  <div id="chatSection">
-    <p id="loadingText" class="loadingText">در حال بارگذاری چت...</p>
-    <iframe id="chatFrame" src="" onload="chatLoaded()" onerror="chatError()"></iframe>
-  </div>
-
   <script>
     function startChat() {
-      document.getElementById("startSection").style.display = "none";
-      document.getElementById("chatSection").style.display = "flex";
-      document.getElementById("chatFrame").src = "https://fxo.io/m/didactic-managed-6825";
-    }
-
-    function chatLoaded() {
-      document.getElementById("loadingText").style.display = "none";
-      document.getElementById("chatFrame").style.display = "block";
-    }
-
-    function chatError() {
-      document.getElementById("loadingText").innerText = "مشکلی در بارگذاری چت پیش آمد ☹️";
+      // این لینک همونیه که می‌خوای منتقل بشن بهش
+      window.location.href = "https://fxo.io/m/didactic-managed-6825";
     }
   </script>
 
