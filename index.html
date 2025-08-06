@@ -1,80 +1,197 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<!DOCTYPE html><html lang="fa" dir="rtl">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>One Ai - شروع چت</title>
-  <!-- فونت Vazir -->
-  <link href="https://cdn.fontcdn.ir/Font/Persian/Vazir/Vazir.css" rel="stylesheet">
+  <title>Happy Coin: Crypto War</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Tahoma, sans-serif; }
     body {
-      background: #121212;
+      background: linear-gradient(#0f0f0f, #1a1a1a);
       color: #fff;
-      font-family: "Vazir", sans-serif;
-      text-align: center;
-      margin: 0;
-      padding: 0;
-    }
-
-    #startSection {
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      overflow-x: hidden;
       padding: 20px;
     }
-
     h1 {
-      font-size: 6vw;
-      margin-bottom: 20px;
-      line-height: 1.6;
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      color: #00ffea;
     }
-
-    button {
-      padding: 12px 30px;
-      font-size: 5vw;
-      max-width: 300px;
+    .crypto-coin {
+      font-size: 1.2rem;
+      margin-bottom: 20px;
+    }
+    .boss {
       width: 80%;
-      background-color: #00ffcc;
-      color: #000;
-      border: none;
+      max-width: 400px;
+      height: 30px;
+      background: #333;
       border-radius: 10px;
+      overflow: hidden;
+      margin: 20px auto;
+    }
+    .boss-health {
+      height: 100%;
+      background: linear-gradient(90deg, #ff004c, #7d00b2);
+      width: 100%;
+      transition: 0.3s;
+    }
+    .btn {
+      background: #00ffea;
+      color: #000;
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
       cursor: pointer;
       transition: 0.3s;
     }
-
-    button:hover {
-      background-color: #00ddb3;
+    .btn:hover {
+      background: #00c2ad;
     }
-
-    @media (min-width: 768px) {
-      h1 {
-        font-size: 36px;
-      }
-      button {
-        font-size: 18px;
-      }
+    .log {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 500px;
+      background: #111;
+      padding: 10px;
+      border-radius: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 0.9rem;
+    }
+    /* DarkNode Boss Design */
+    .darknode-container {
+      position: relative;
+      width: 200px;
+      height: 250px;
+      margin: 40px auto 20px;
+    }
+    .aura {
+      position: absolute;
+      width: 200px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(128,0,255,0.4), transparent 70%);
+      filter: blur(20px);
+      z-index: 0;
+      animation: pulse 2s infinite alternate;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.6; }
+      100% { transform: scale(1.2); opacity: 1; }
+    }
+    .darknode-body {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(145deg, #1a1a1a, #111);
+      border-radius: 20px;
+      border: 3px solid #5500ff;
+      z-index: 1;
+      box-shadow: 0 0 20px #5500ff;
+      overflow: hidden;
+    }
+    .eye {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: red;
+      border-radius: 50%;
+      top: 40px;
+      box-shadow: 0 0 10px red, 0 0 20px red;
+    }
+    .eye.left {
+      left: 40px;
+    }
+    .eye.right {
+      right: 40px;
+    }
+    .circuit {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-image: repeating-linear-gradient(0deg, #00ffea 0 2px, transparent 2px 8px);
+      opacity: 0.1;
+      animation: glitch 1s infinite;
+    }
+    @keyframes glitch {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-2px); }
+      100% { transform: translateY(0); }
+    }
+    .name {
+      text-align: center;
+      margin-top: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 1.2rem;
+      color: #00ffea;
+      text-shadow: 0 0 5px #00ffea;
     }
   </style>
 </head>
 <body>
+  <h1>Happy Coin: Crypto War</h1>
+  <div class="crypto-coin">رمز ارز شما: <span id="coins">0</span> 🪙</div>  <!-- DarkNode Boss Visual -->  <div class="darknode-container">
+    <div class="aura"></div>
+    <div class="darknode-body">
+      <div class="eye left"></div>
+      <div class="eye right"></div>
+      <div class="circuit"></div>
+    </div>
+    <div class="name">DarkNode</div>
+  </div>  <div class="boss">
+    <div id="bossHealth" class="boss-health"></div>
+  </div><button class="btn" onclick="attackBoss()">حمله به DarkNode</button> <button class="btn" onclick="buyDataCenter()">خرید دیتاسنتر 💾</button>
 
-  <div id="startSection">
-    <h1>One Ai<br>ساخته شده توسط Rob Lucci</h1>
-    <button onclick="startChat()">شروع چت</button>
-  </div>
+  <div class="log" id="log"></div>  <script>
+    let coins = 0;
+    let bossHP = 300;
+    const bossBar = document.getElementById("bossHealth");
+    const log = document.getElementById("log");
 
-  <script>
-    function startChat() {
-      // این لینک همونیه که می‌خوای منتقل بشن بهش
-      window.location.href = "https://fxo.io/m/didactic-managed-6825";
+    function updateUI() {
+      document.getElementById("coins").innerText = coins;
+      bossBar.style.width = (bossHP / 300) * 100 + "%";
     }
-  </script>
 
-</body>
+    function logMessage(msg) {
+      log.innerHTML = "<div>> " + msg + "</div>" + log.innerHTML;
+    }
+
+    function attackBoss() {
+      if (bossHP <= 0) return;
+
+      const damage = Math.floor(Math.random() * 15) + 5;
+      bossHP -= damage;
+      coins += 10;
+      logMessage(`شما ${damage} دمیج وارد کردید و ۱۰ رمز ارز گرفتید!`);
+
+      if (bossHP <= 0) {
+        logMessage("باس نابود شد! 🎉 اما...");
+        setTimeout(() => {
+          logMessage("تو سکه‌ سیاه رو بردی… ولی بازی تازه شروع شده… هدف بعدی؟ رمز ارز!");
+          logMessage("تو تونستی منو هک کنی... ولی بلاک‌چین هیچ‌وقت نمی‌میره...");
+        }, 1000);
+      }
+
+      updateUI();
+    }
+
+    function buyDataCenter() {
+      if (coins >= 50) {
+        coins -= 50;
+        logMessage("شما یک دیتاسنتر خریدید! قدرت پردازش بیشتر شد 💻");
+      } else {
+        logMessage("رمز ارز کافی برای خرید دیتاسنتر ندارید.");
+      }
+      updateUI();
+    }
+
+    updateUI();
+  </script></body>
 </html>
