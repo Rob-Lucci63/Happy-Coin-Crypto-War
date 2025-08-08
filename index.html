@@ -1,197 +1,455 @@
-<!DOCTYPE html><html lang="fa" dir="rtl">
+<!doctype html>
+<html lang="fa" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Happy Coin: Crypto War</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Tahoma, sans-serif; }
-    body {
-      background: linear-gradient(#0f0f0f, #1a1a1a);
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      overflow-x: hidden;
-      padding: 20px;
-    }
-    h1 {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
-      color: #00ffea;
-    }
-    .crypto-coin {
-      font-size: 1.2rem;
-      margin-bottom: 20px;
-    }
-    .boss {
-      width: 80%;
-      max-width: 400px;
-      height: 30px;
-      background: #333;
-      border-radius: 10px;
-      overflow: hidden;
-      margin: 20px auto;
-    }
-    .boss-health {
-      height: 100%;
-      background: linear-gradient(90deg, #ff004c, #7d00b2);
-      width: 100%;
-      transition: 0.3s;
-    }
-    .btn {
-      background: #00ffea;
-      color: #000;
-      padding: 10px 20px;
-      margin: 10px;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    .btn:hover {
-      background: #00c2ad;
-    }
-    .log {
-      margin-top: 20px;
-      width: 100%;
-      max-width: 500px;
-      background: #111;
-      padding: 10px;
-      border-radius: 8px;
-      max-height: 200px;
-      overflow-y: auto;
-      font-size: 0.9rem;
-    }
-    /* DarkNode Boss Design */
-    .darknode-container {
-      position: relative;
-      width: 200px;
-      height: 250px;
-      margin: 40px auto 20px;
-    }
-    .aura {
-      position: absolute;
-      width: 200px;
-      height: 250px;
-      background: radial-gradient(circle, rgba(128,0,255,0.4), transparent 70%);
-      filter: blur(20px);
-      z-index: 0;
-      animation: pulse 2s infinite alternate;
-    }
-    @keyframes pulse {
-      0% { transform: scale(1); opacity: 0.6; }
-      100% { transform: scale(1.2); opacity: 1; }
-    }
-    .darknode-body {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(145deg, #1a1a1a, #111);
-      border-radius: 20px;
-      border: 3px solid #5500ff;
-      z-index: 1;
-      box-shadow: 0 0 20px #5500ff;
-      overflow: hidden;
-    }
-    .eye {
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      background: red;
-      border-radius: 50%;
-      top: 40px;
-      box-shadow: 0 0 10px red, 0 0 20px red;
-    }
-    .eye.left {
-      left: 40px;
-    }
-    .eye.right {
-      right: 40px;
-    }
-    .circuit {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background-image: repeating-linear-gradient(0deg, #00ffea 0 2px, transparent 2px 8px);
-      opacity: 0.1;
-      animation: glitch 1s infinite;
-    }
-    @keyframes glitch {
-      0% { transform: translateY(0); }
-      50% { transform: translateY(-2px); }
-      100% { transform: translateY(0); }
-    }
-    .name {
-      text-align: center;
-      margin-top: 10px;
-      font-family: 'Courier New', monospace;
-      font-size: 1.2rem;
-      color: #00ffea;
-      text-shadow: 0 0 5px #00ffea;
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Happy Coin: Crypto War — v2</title>
+<style>
+  :root{
+    --bg1:#070709; --bg2:#121217; --accent:#00ffea; --danger:#ff004c; --purple:#7d00b2;
+  }
+  *{box-sizing:border-box;font-family:Tahoma, Arial, sans-serif}
+  body{
+    margin:0; min-height:100vh; background:linear-gradient(180deg,var(--bg1),var(--bg2));
+    color:#e9eef0; display:flex; flex-direction:column; align-items:center; gap:12px; padding:18px;
+  }
+  header{width:100%; max-width:960px; display:flex; justify-content:space-between; align-items:center; gap:8px}
+  h1{color:var(--accent); font-size:1.4rem; margin:0}
+  .top-stats{display:flex; gap:10px; align-items:center; font-size:0.95rem}
+  .chip{background:#0e0e10;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
+  main{width:100%; max-width:960px; display:flex; flex-direction:column; align-items:center; gap:12px}
+  /* Boss card + visual */
+  .card{width:100%; background:linear-gradient(180deg,#0b0b0c, #101012); border-radius:12px; padding:14px; box-shadow:0 6px 20px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.03)}
+  .boss-visual{display:flex; flex-direction:column; align-items:center; gap:8px}
+  .darknode {
+    position:relative; width:220px; height:270px; border-radius:18px; background:linear-gradient(145deg,#141416,#0b0b0d);
+    border:3px solid rgba(85,0,255,0.18); box-shadow:0 0 30px rgba(85,0,255,0.12) inset, 0 18px 40px rgba(0,0,0,0.6);
+    overflow:hidden;
+  }
+  /* aura */
+  .aura{position:absolute; inset: -20px; background:radial-gradient(circle, rgba(125,0,178,0.16), transparent 35%); filter:blur(18px); z-index:0; animation:pulse 2.2s ease-in-out infinite alternate}
+  @keyframes pulse{from{transform:scale(1);opacity:.7}to{transform:scale(1.09);opacity:1}}
+  /* circuitry */
+  .circuit-lines{position:absolute; inset:0; background-image:
+    linear-gradient(90deg, rgba(0,255,234,0.06) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(0,255,234,0.03) 1px, transparent 1px);
+    background-size:8px 40px, 40px 8px; opacity:.8; mix-blend-mode:screen; transform:translateY(0); animation:glitch 1s infinite}
+  @keyframes glitch{0%{transform:translate(0,0)}25%{transform:translate(-2px,1px)}50%{transform:translate(1px,-2px)}75%{transform:translate(-1px,2px)}100%{transform:translate(0,0)}}
+  .eyes{position:absolute; top:38px; width:100%; display:flex; justify-content:space-between; padding:0 32px; z-index:2}
+  .eye{width:26px; height:26px; background:radial-gradient(circle, #ff6b6b 0%, #ff1a1a 35%, #8f0000 70%); border-radius:50%; box-shadow:0 0 14px rgba(255,20,20,0.9), 0 0 26px rgba(255,80,80,0.15)}
+  .core{position:absolute; left:50%; transform:translateX(-50%); bottom:48px; width:140px; height:80px; border-radius:8px; background:linear-gradient(180deg,#09090a,#111); border:2px solid rgba(0,255,234,0.04); box-shadow:0 0 18px rgba(125,0,178,0.06) inset}
+  .name-tag{text-align:center;margin-top:4px;color:var(--accent); font-family:monospace; font-weight:700; text-shadow:0 0 8px rgba(0,255,234,0.1)}
+  /* hp bars */
+  .hp-row{display:flex; gap:10px; align-items:center; width:100%}
+  .bar-wrap{flex:1; background:#0b0b0d; padding:8px; border-radius:8px}
+  .bar{height:18px; background:#222; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.02)}
+  .bar > i{display:block; height:100%; width:100%; transition:width .25s linear}
+  .bar.boss > i{background:linear-gradient(90deg,var(--danger),var(--purple))}
+  .bar.player > i{background:linear-gradient(90deg,#24d14f,#9be46b)}
+  .hp-text{min-width:90px; text-align:center; font-size:0.9rem}
+  /* controls */
+  .controls{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
+  .btn{background:var(--accent); color:#001; border:none; padding:10px 14px; border-radius:8px; font-weight:700; cursor:pointer}
+  .btn.secondary{background:#222; color:#eaeaea; border:1px solid rgba(255,255,255,0.03)}
+  .btn.ghost{background:transparent; border:1px dashed rgba(255,255,255,0.04)}
+  .log{background:#0b0b0d; width:100%; max-width:760px; padding:12px; border-radius:10px; font-size:0.9rem; max-height:200px; overflow:auto; border:1px solid rgba(255,255,255,0.02)}
+  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  .stats-box{display:flex; gap:8px; align-items:center}
+  .small{font-size:0.87rem; opacity:0.9}
+  footer{margin-top:6px; opacity:.7; font-size:0.85rem}
+  /* modal */
+  .modal{position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; padding:18px; z-index:40}
+  .modal.show{display:flex}
+  .modal-card{width:100%; max-width:760px; background:linear-gradient(180deg,#0b0b0d,#0f0f11); padding:14px; border-radius:12px; border:1px solid rgba(255,255,255,0.03)}
+  .stages{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px}
+  .stage{padding:10px; background:#0e0e10; border-radius:8px; text-align:center; cursor:pointer; border:1px solid rgba(255,255,255,0.02)}
+  .stage.locked{opacity:.45; filter:grayscale(20%)}
+  .stage .num{font-weight:800; color:var(--accent); font-size:1.1rem}
+  .stage .diff{font-size:0.82rem; margin-top:6px; color:#cfd8dc}
+  @media (max-width:520px){
+    .darknode{width:160px;height:200px}
+    .hp-text{min-width:70px;font-size:0.85rem}
+  }
+</style>
 </head>
 <body>
+<header>
   <h1>Happy Coin: Crypto War</h1>
-  <div class="crypto-coin">رمز ارز شما: <span id="coins">0</span> 🪙</div>  <!-- DarkNode Boss Visual -->  <div class="darknode-container">
-    <div class="aura"></div>
-    <div class="darknode-body">
-      <div class="eye left"></div>
-      <div class="eye right"></div>
-      <div class="circuit"></div>
+  <div class="top-stats">
+    <div class="chip">رمز ارز: <strong id="coins">0</strong> 🪙</div>
+    <div class="chip">دیتاسنتر: <strong id="dcCount">0</strong></div>
+    <div class="chip">قیمت بعدی DC: <strong id="dcCost">50</strong> 🪙</div>
+  </div>
+</header>
+
+<main>
+  <section class="card boss-visual">
+    <div class="darknode">
+      <div class="aura"></div>
+      <div class="circuit-lines"></div>
+      <div class="eyes"><div class="eye"></div><div class="eye"></div></div>
+      <div class="core"></div>
     </div>
-    <div class="name">DarkNode</div>
-  </div>  <div class="boss">
-    <div id="bossHealth" class="boss-health"></div>
-  </div><button class="btn" onclick="attackBoss()">حمله به DarkNode</button> <button class="btn" onclick="buyDataCenter()">خرید دیتاسنتر 💾</button>
+    <div class="name-tag">DarkNode</div>
 
-  <div class="log" id="log"></div>  <script>
-    let coins = 0;
-    let bossHP = 300;
-    const bossBar = document.getElementById("bossHealth");
-    const log = document.getElementById("log");
+    <div style="width:100%;max-width:760px;margin-top:10px">
+      <div class="hp-row">
+        <div class="hp-text">باس</div>
+        <div class="bar-wrap">
+          <div class="bar boss"><i id="bossBar" style="width:100%"></i></div>
+        </div>
+        <div class="hp-text" id="bossHPText">HP: 300</div>
+      </div>
 
-    function updateUI() {
-      document.getElementById("coins").innerText = coins;
-      bossBar.style.width = (bossHP / 300) * 100 + "%";
-    }
+      <div style="height:8px"></div>
 
-    function logMessage(msg) {
-      log.innerHTML = "<div>> " + msg + "</div>" + log.innerHTML;
-    }
+      <div class="hp-row">
+        <div class="hp-text">تو</div>
+        <div class="bar-wrap">
+          <div class="bar player"><i id="playerBar" style="width:100%"></i></div>
+        </div>
+        <div class="hp-text" id="playerHPText">HP: 100</div>
+      </div>
+    </div>
 
-    function attackBoss() {
-      if (bossHP <= 0) return;
+    <div class="controls" style="margin-top:12px">
+      <button class="btn" id="openStagesBtn">حمله به DarkNode</button>
+      <button class="btn secondary" id="buyDCBtn">خرید دیتاسنتر</button>
+      <button class="btn ghost" id="retreatBtn" style="display:none">فرار</button>
+    </div>
+  </section>
 
-      const damage = Math.floor(Math.random() * 15) + 5;
-      bossHP -= damage;
-      coins += 10;
-      logMessage(`شما ${damage} دمیج وارد کردید و ۱۰ رمز ارز گرفتید!`);
+  <section class="card">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <div class="stats-box small">مرحله فعلی: <strong id="currentStageText">0</strong></div>
+      <div class="stats-box small">وضعیت: <strong id="statusText">آماده</strong></div>
+    </div>
+    <div style="height:10px"></div>
+    <div class="log" id="log">> خوش آمدی! برای شروع، روی «حمله به DarkNode» بزن.</div>
+  </section>
+</main>
 
-      if (bossHP <= 0) {
-        logMessage("باس نابود شد! 🎉 اما...");
-        setTimeout(() => {
-          logMessage("تو سکه‌ سیاه رو بردی… ولی بازی تازه شروع شده… هدف بعدی؟ رمز ارز!");
-          logMessage("تو تونستی منو هک کنی... ولی بلاک‌چین هیچ‌وقت نمی‌میره...");
-        }, 1000);
-      }
+<!-- Stage modal -->
+<div id="stageModal" class="modal" aria-hidden="true">
+  <div class="modal-card">
+    <h3 style="margin:0 0 8px 0">انتخاب مرحله (۱۲ مرحله)</h3>
+    <div class="stages" id="stagesGrid"></div>
+    <div style="height:10px"></div>
+    <div style="text-align:center"><button class="btn secondary" id="closeModalBtn">بستن</button></div>
+  </div>
+</div>
 
-      updateUI();
-    }
+<footer>نسخه آزمایشی — موبایل و دسکتاپ هماهنگ</footer>
 
-    function buyDataCenter() {
-      if (coins >= 50) {
-        coins -= 50;
-        logMessage("شما یک دیتاسنتر خریدید! قدرت پردازش بیشتر شد 💻");
-      } else {
-        logMessage("رمز ارز کافی برای خرید دیتاسنتر ندارید.");
-      }
-      updateUI();
-    }
+<script>
+/* === GAME STATE === */
+let coins = 0;
+let dcCount = 0;
+let dcCost = 50;
+let playerMaxHP = 100;
+let playerHP = playerMaxHP;
+let bossMaxHP = 300;
+let bossHP = bossMaxHP;
+let bossAlive = false;
+let bossInterval = null;
+let bossAttackTimer = 1500; // ms
+let currentStage = 0;
+const TOTAL_STAGES = 12;
+let unlockedStage = Number(localStorage.getItem('hc_unlocked')) || 1;
+if (!unlockedStage) unlockedStage = 1;
 
+/* DOM */
+const coinsEl = document.getElementById('coins');
+const dcCountEl = document.getElementById('dcCount');
+const dcCostEl = document.getElementById('dcCost');
+const bossBarEl = document.getElementById('bossBar');
+const playerBarEl = document.getElementById('playerBar');
+const bossHPText = document.getElementById('bossHPText');
+const playerHPText = document.getElementById('playerHPText');
+const logEl = document.getElementById('log');
+const openStagesBtn = document.getElementById('openStagesBtn');
+const stageModal = document.getElementById('stageModal');
+const stagesGrid = document.getElementById('stagesGrid');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const buyDCBtn = document.getElementById('buyDCBtn');
+const retreatBtn = document.getElementById('retreatBtn');
+const currentStageText = document.getElementById('currentStageText');
+const statusText = document.getElementById('statusText');
+
+/* Utility */
+function fmt(n){ return Math.round(n); }
+function log(msg){ logEl.innerHTML = '> ' + msg + '<br>' + logEl.innerHTML; }
+
+/* UI updates */
+function updateUI(){
+  coinsEl.innerText = fmt(coins);
+  dcCountEl.innerText = dcCount;
+  dcCostEl.innerText = fmt(dcCost);
+  bossBarEl.style.width = (Math.max(0,bossHP)/bossMaxHP*100) + '%';
+  playerBarEl.style.width = (Math.max(0,playerHP)/playerMaxHP*100) + '%';
+  bossHPText.innerText = 'HP: ' + fmt(bossHP) + ' / ' + fmt(bossMaxHP);
+  playerHPText.innerText = 'HP: ' + fmt(playerHP) + ' / ' + fmt(playerMaxHP);
+  currentStageText.innerText = currentStage ? currentStage : '—';
+}
+
+/* Stage generation */
+function computeBossHPForStage(stage){
+  // base 300, grows ~1.6x per stage
+  return Math.round(300 * Math.pow(1.6, stage-1));
+}
+function computeBossAttackForStage(stage){
+  // base 8, grows ~1.25x per stage
+  return Math.round(8 * Math.pow(1.25, stage-1));
+}
+
+/* Make it hard enough so DC لازم باشه:
+   We'll make player's average damage without DC roughly 12-13.
+   Boss HP growth is sharp; higher stages need multiplier from DCs.
+*/
+function damageMultiplier(){ return 1 + dcCount * 0.6; } // each DC adds +60% damage
+
+/* Buy DataCenter */
+function buyDataCenter(){
+  if (coins >= dcCost){
+    coins -= dcCost;
+    dcCount += 1;
+    // increase cost exponentially
+    dcCost = Math.round(dcCost * 1.8);
+    log('دیتاسنتر خریدی — قدرت حمله‌ات افزایش یافت! (×' + damageMultiplier().toFixed(2) + ')');
     updateUI();
-  </script></body>
+  } else {
+    log('رمز ارز کافی نداری برای خرید دیتاسنتر.');
+  }
+}
+
+/* Stage modal population */
+function buildStages(){
+  stagesGrid.innerHTML = '';
+  for (let s=1;s<=TOTAL_STAGES;s++){
+    const stageDiv = document.createElement('div');
+    stageDiv.className = 'stage' + (s>unlockedStage ? ' locked' : '');
+    stageDiv.innerHTML = '<div class="num">مرحله '+s+'</div><div class="diff">سختی: '+difficultyLabel(s)+'</div>';
+    (function(stage){
+      stageDiv.addEventListener('click',()=>{
+        if (stage > unlockedStage){
+          log('این مرحله قفل است. اول مراحل قبل را کامل کن یا دیتاسنتر بخر.');
+          return;
+        }
+        startStage(stage);
+        closeStageModal();
+      });
+    })(s);
+    stagesGrid.appendChild(stageDiv);
+  }
+}
+function difficultyLabel(s){
+  if (s<=3) return 'آسان';
+  if (s<=7) return 'متوسط';
+  if (s<=10) return 'سخت';
+  return 'نهایی';
+}
+
+/* Modal controls */
+openStagesBtn.addEventListener('click', ()=>{ buildStages(); stageModal.classList.add('show'); stageModal.setAttribute('aria-hidden','false'); });
+closeModalBtn.addEventListener('click', ()=> closeStageModal());
+function closeStageModal(){ stageModal.classList.remove('show'); stageModal.setAttribute('aria-hidden','true'); }
+
+/* Start stage */
+function startStage(stage){
+  if (bossAlive) { log('الان در حال مبارزه‌ای — اول تمومش کن یا فرار کن.'); return; }
+  currentStage = stage;
+  bossMaxHP = computeBossHPForStage(stage);
+  bossHP = bossMaxHP;
+  bossAttackStrength = computeBossAttackForStage(stage);
+  // player resets HP for fairness
+  playerHP = playerMaxHP;
+  bossAlive = true;
+  statusText.innerText = 'در حال مبارزه (مرحله '+stage+')';
+  log('مرحله '+stage+' شروع شد! باس HP: '+bossMaxHP+' | حملهٔ باس: '+bossAttackStrength);
+  // show retreat button & buy button
+  retreatBtn.style.display = 'inline-block';
+  // start boss attack loop
+  startBossLoop(stage);
+  updateUI();
+}
+
+/* Boss loop */
+let bossAttackIntervalId = null;
+function startBossLoop(stage){
+  if (bossAttackIntervalId) clearInterval(bossAttackIntervalId);
+  // boss attacks every interval; interval shortens slightly on higher stages
+  const interval = Math.max(900, 1500 - (stage-1)*60);
+  bossAttackIntervalId = setInterval(()=>{
+    if (!bossAlive) return;
+    // boss deals damage scaled, and if player used melee recently it will be stronger.
+    const base = computeBossAttackForStage(stage);
+    // if player used melee in last turn we increase boss retaliation: handled via lastAttackType variable
+    const multiplier = (lastAttackType === 'melee') ? 1.45 : 1.0;
+    const dmg = Math.round(base * multiplier * (0.9 + Math.random()*0.3));
+    playerHP -= dmg;
+    log('DarkNode حمله کرد و ' + dmg + ' دمیج زد! (توی مرحله '+stage+')');
+    if (playerHP <= 0){
+      playerHP = 0;
+      updateUI();
+      endFight(false);
+    } else {
+      updateUI();
+    }
+  }, interval);
+}
+
+/* Attack logic */
+let lastAttackType = null;
+function playerAttack(type){
+  if (!bossAlive){ log('الان باس نیست، مرحله انتخاب کن.'); return; }
+  // type: 'melee' or 'ranged'
+  lastAttackType = type;
+  // base damage:
+  let base;
+  if (type === 'melee'){
+    // melee higher raw but causes stronger counterattack later
+    base = Math.floor(Math.random()*18) + 12; // 12-29
+  } else {
+    // ranged/crypto attack: safer, less counter
+    base = Math.floor(Math.random()*12) + 6; // 6-17
+  }
+  // apply DC multiplier
+  const dmg = Math.round(base * damageMultiplier());
+  bossHP -= dmg;
+  // reward coins per hit scales with stage
+  const reward = Math.round(8 * currentStage * (type==='melee' ? 1 : 1.1));
+  coins += reward;
+  log('تو زدی ('+type+') و ' + dmg + ' دمیج وارد کردی — +' + reward + ' سکه');
+  // increase difficulty on melee: boss gets enraged (for flavor)
+  if (type === 'melee'){
+    // slight immediate boss HP buff to reflect "close fight strengthens boss"
+    const buff = Math.round(bossMaxHP * 0.02); // 2% buff
+    bossHP = Math.min(bossHP + buff, bossMaxHP + buff); // boss can slightly grow
+    log('حالت تن به تن! باس تقویت شد و مقاومتش افزایش یافت.');
+  }
+  updateUI();
+  // check boss death
+  if (bossHP <= 0){
+    bossHP = 0;
+    updateUI();
+    endFight(true);
+  }
+}
+
+/* End fight */
+function endFight(victory){
+  bossAlive = false;
+  statusText.innerText = victory ? 'برنده شدی!' : 'شکست خوردی';
+  if (bossAttackIntervalId){ clearInterval(bossAttackIntervalId); bossAttackIntervalId = null; }
+  retreatBtn.style.display = 'none';
+  // reward or penalty
+  if (victory){
+    const baseReward = Math.round(120 * currentStage * (1 + dcCount*0.1));
+    coins += baseReward;
+    log('تبریک! باس شکست خورد. دریافتی: +' + baseReward + ' سکه');
+    // unlock next stage
+    if (currentStage < TOTAL_STAGES && unlockedStage <= currentStage){
+      unlockedStage = currentStage + 1;
+      localStorage.setItem('hc_unlocked', unlockedStage);
+      log('مرحله بعد باز شد: ' + unlockedStage);
+    }
+  } else {
+    // defeat penalty: lose some coins but not all
+    const loss = Math.min(coins, Math.round(20 * currentStage));
+    coins -= loss;
+    log('شکست خوردی... از دست دادی ' + loss + ' سکه');
+  }
+  // reset stage
+  currentStage = 0;
+  updateUI();
+}
+
+/* Retreat */
+retreatBtn.addEventListener('click', ()=>{
+  if (!bossAlive) return;
+  bossAlive = false;
+  if (bossAttackIntervalId){ clearInterval(bossAttackIntervalId); bossAttackIntervalId = null; }
+  log('فرار کردی از مبارزه. سکه‌هاتو نگه دار!');
+  statusText.innerText = 'آماده';
+  retreatBtn.style.display = 'none';
+  currentStage = 0;
+  updateUI();
+});
+
+/* Buttons wiring */
+buyDCBtn.addEventListener('click', buyDataCenter);
+
+/* Keyboard: quick attacks while fighting */
+document.addEventListener('keydown', (e)=>{
+  if (!bossAlive) return;
+  if (e.key === 'z') playerAttack('melee'); // z for melee
+  if (e.key === 'x') playerAttack('ranged'); // x for ranged
+});
+
+/* Mobile-friendly quick action area — we'll inject buttons when fight starts */
+function showFightControls(){
+  // remove old if exists
+  const existing = document.getElementById('fightControls');
+  if (existing) existing.remove();
+  const cont = document.createElement('div');
+  cont.id = 'fightControls';
+  cont.style.position = 'fixed';
+  cont.style.left = '50%';
+  cont.style.transform = 'translateX(-50%)';
+  cont.style.bottom = '14px';
+  cont.style.zIndex = 50;
+  cont.style.display = 'flex';
+  cont.style.gap = '10px';
+  cont.innerHTML = '<button class="btn" id="meleeBtnMobile">حمله تن به تن</button><button class="btn secondary" id="rangedBtnMobile">حمله کریپتو</button>';
+  document.body.appendChild(cont);
+  document.getElementById('meleeBtnMobile').addEventListener('click', ()=>playerAttack('melee'));
+  document.getElementById('rangedBtnMobile').addEventListener('click', ()=>playerAttack('ranged'));
+}
+function hideFightControls(){ const e=document.getElementById('fightControls'); if(e) e.remove(); }
+
+/* Expose two on-screen attack buttons while in fight (desktop also sees them) */
+const attackBar = document.createElement('div');
+attackBar.style.marginTop = '10px';
+attackBar.style.display = 'flex';
+attackBar.style.gap = '8px';
+attackBar.innerHTML = '<button class="btn" id="meleeBtn">حمله تن به تن (Melee)</button><button class="btn" id="rangedBtn">حمله کریپتو (Ranged)</button>';
+document.querySelector('main').insertBefore(attackBar, document.querySelector('.card:last-of-type'));
+document.getElementById('meleeBtn').addEventListener('click', ()=>{ if(!bossAlive){ openStagesBtn.click(); } else playerAttack('melee'); });
+document.getElementById('rangedBtn').addEventListener('click', ()=>{ if(!bossAlive){ openStagesBtn.click(); } else playerAttack('ranged'); });
+
+/* Start stage button as also opens modal: already wired */
+
+/* init */
+updateUI();
+buildStages();
+
+/* Watch bossAlive to show/hide mobile controls */
+setInterval(()=>{
+  if (bossAlive) showFightControls(); else hideFightControls();
+}, 500);
+
+/* Small helper: when fight starts, show status and allow buyDC during fight */
+(function(){
+  const originalStart = startStage;
+  startStage = function(stage){
+    originalStart(stage);
+    // show fight controls and make buy button visible
+    buyDCBtn.style.display = 'inline-block';
+    // allow quick buys during fight
+    log('برای حمله قوی‌تر، دیتاسنتر بخر. بدون DC برای مراحل بالا کشته‌نشدنی می‌شه!');
+    // also set small UI hack: boss attack timer
+  };
+})();
+
+/* Safety: clear intervals on unload */
+window.addEventListener('beforeunload', ()=>{
+  if (bossAttackIntervalId) clearInterval(bossAttackIntervalId);
+});
+
+/* Expose to console for debugging (if خواستی) */
+window.__hc = {
+  buyDataCenter, playerAttack, startStage, computeBossHPForStage, computeBossAttackForStage
+};
+</script>
+</body>
 </html>
