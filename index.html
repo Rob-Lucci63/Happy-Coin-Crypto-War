@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Happy Coin: Crypto War — v3</title>
+<title>Happy Coin: Crypto War — Save v1</title>
 <style>
   :root{
     --bg1:#070709; --bg2:#121217; --accent:#00ffea; --danger:#ff004c; --purple:#7d00b2;
@@ -145,15 +145,19 @@ let coins = 0;
 let dcCount = 0;
 let dcCost = 50;
 let playerMaxHP = 100;
-let playerHP = playerMaxHP;
+let playerHP = playerMaxHP; // not saved across sessions
 let bossMaxHP = 300;
 let bossHP = bossMaxHP;
 let bossAlive = false;
-let bossInterval = null;
-let bossAttackTimer = 1500; // ms
+let bossAttackStrength = 8;
 let currentStage = 0;
 const TOTAL_STAGES = 12;
+
+/* LOAD SAVED DATA from localStorage (except playerHP) */
 let unlockedStage = Number(localStorage.getItem('hc_unlocked')) || 1;
+coins = Number(localStorage.getItem('hc_coins')) || 0;
+dcCount = Number(localStorage.getItem('hc_dcCount')) || 0;
+dcCost = Number(localStorage.getItem('hc_dcCost')) || 50;
 if (!unlockedStage) unlockedStage = 1;
 
 /* DOM */
@@ -178,7 +182,7 @@ const statusText = document.getElementById('statusText');
 function fmt(n){ return Math.round(n); }
 function log(msg){ logEl.innerHTML = '> ' + msg + '<br>' + logEl.innerHTML; }
 
-/* UI updates */
+/* UI updates + save (except playerHP) */
 function updateUI(){
   coinsEl.innerText = fmt(coins);
   dcCountEl.innerText = dcCount;
@@ -188,9 +192,19 @@ function updateUI(){
   bossHPText.innerText = 'HP: ' + fmt(bossHP) + ' / ' + fmt(bossMaxHP);
   playerHPText.innerText = 'HP: ' + fmt(playerHP) + ' / ' + fmt(playerMaxHP);
   currentStageText.innerText = currentStage ? currentStage : '—';
+
+  // Save game data except playerHP
+  try{
+    localStorage.setItem('hc_coins', coins);
+    localStorage.setItem('hc_dcCount', dcCount);
+    localStorage.setItem('hc_dcCost', dcCost);
+    localStorage.setItem('hc_unlocked', unlockedStage);
+  }catch(e){
+    console.warn('localStorage error', e);
+  }
 }
 
-/* Stage functions */
+/* Stage difficulty formula */
 function computeBossHPForStage(stage){
   return Math.round(300 * Math.pow(1.6, stage-1));
 }
@@ -251,7 +265,7 @@ function startStage(stage){
   bossMaxHP = computeBossHPForStage(stage);
   bossHP = bossMaxHP;
   bossAttackStrength = computeBossAttackForStage(stage);
-  // player resets HP for fairness at start of stage too
+  // player resets HP (not saved between sessions)
   playerHP = playerMaxHP;
   bossAlive = true;
   statusText.innerText = 'در حال مبارزه (مرحله '+stage+')';
@@ -265,12 +279,12 @@ function startStage(stage){
 let bossAttackIntervalId = null;
 function startBossLoop(stage){
   if (bossAttackIntervalId) clearInterval(bossAttackIntervalId);
-  const interval = Math.max(900, 1500 - (stage-1)*60);
+  const interval = Math.max(700, 1500 - (stage-1)*70); // higher stages attack faster
   bossAttackIntervalId = setInterval(()=>{
     if (!bossAlive) return;
     const base = computeBossAttackForStage(stage);
     const multiplier = (lastAttackType === 'melee') ? 1.45 : 1.0;
-    const dmg = Math.round(base * multiplier * (0.9 + Math.random()*0.3));
+    const dmg = Math.max(1, Math.round(base * multiplier * (0.9 + Math.random()*0.3)));
     playerHP -= dmg;
     log('DarkNode حمله کرد و ' + dmg + ' دمیج زد! (مرحله '+stage+')');
     if (playerHP <= 0){
@@ -296,13 +310,13 @@ function playerAttack(type){
   }
   const dmg = Math.round(base * damageMultiplier());
   bossHP -= dmg;
-  const reward = Math.round(8 * currentStage * (type==='melee' ? 1 : 1.1));
+  const reward = Math.round(8 * Math.max(1,currentStage) * (type==='melee' ? 1 : 1.1));
   coins += reward;
-  log('تو زدی ('+type+') و ' + dmg + ' دمیج وارد کردی — +' + reward + ' سکه');
+  log('تو زدی ('+ (type==='melee'?'تن به تن':'کریپتو') +') و ' + dmg + ' دمیج وارد کردی — +' + reward + ' سکه');
   if (type === 'melee'){
     const buff = Math.round(bossMaxHP * 0.02);
     bossHP = Math.min(bossHP + buff, bossMaxHP + buff);
-    log('حالت تن به تن! باس تقویت شد و مقاومتش افزایش یافت.');
+    log('حالت تن به تن! باس برای لحظه‌ای قوی‌تر شد.');
   }
   updateUI();
   if (bossHP <= 0){
@@ -319,25 +333,25 @@ function endFight(victory){
   if (bossAttackIntervalId){ clearInterval(bossAttackIntervalId); bossAttackIntervalId = null; }
   retreatBtn.style.display = 'none';
   if (victory){
-    const baseReward = Math.round(120 * currentStage * (1 + dcCount*0.1));
+    const baseReward = Math.round(120 * Math.max(1,currentStage) * (1 + dcCount*0.1));
     coins += baseReward;
-    log('تبریک! باس شکست خورد. دریافتی: +' + baseReward + ' سکه');
-    // refill player's HP fully after victory
+    // refill player's HP fully AFTER victory (explicit per request)
     playerHP = playerMaxHP;
+    log('تبریک! باس شکست خورد. دریافتی: +' + baseReward + ' سکه');
     log('جان تو پس از پیروزی کامل بازیابی شد.');
     // unlock next stage
     if (currentStage < TOTAL_STAGES && unlockedStage <= currentStage){
       unlockedStage = currentStage + 1;
-      localStorage.setItem('hc_unlocked', unlockedStage);
+      try{ localStorage.setItem('hc_unlocked', unlockedStage); }catch(e){}
       log('مرحله بعد باز شد: ' + unlockedStage);
     }
   } else {
-    const loss = Math.min(coins, Math.round(20 * currentStage));
+    const loss = Math.min(coins, Math.round(20 * Math.max(1,currentStage)));
     coins -= loss;
     log('شکست خوردی... از دست دادی ' + loss + ' سکه');
-    // after defeat also refill player to allow retry but not full immediate? user wanted refill after finishing stage only — keep defeat without refill
+    // Do NOT refill HP on defeat (player will have 0 and can retry which resets HP when starting a stage)
   }
-  // reset
+  // reset stage
   currentStage = 0;
   updateUI();
 }
@@ -357,11 +371,12 @@ retreatBtn.addEventListener('click', ()=>{
 /* Buttons wiring */
 buyDCBtn.addEventListener('click', buyDataCenter);
 
-/* Keyboard attacks */
+/* Keyboard attacks (desktop) */
 document.addEventListener('keydown', (e)=>{
   if (!bossAlive) return;
-  if (e.key === 'z') playerAttack('melee');
-  if (e.key === 'x') playerAttack('ranged');
+  // z / x keys
+  if (e.key === 'z' || e.key === 'Z') playerAttack('melee');
+  if (e.key === 'x' || e.key === 'X') playerAttack('ranged');
 });
 
 /* Mobile-friendly quick action area */
@@ -394,16 +409,18 @@ document.querySelector('main').insertBefore(attackBar, document.querySelector('.
 document.getElementById('meleeBtn').addEventListener('click', ()=>{ if(!bossAlive){ openStagesBtn.click(); } else playerAttack('melee'); });
 document.getElementById('rangedBtn').addEventListener('click', ()=>{ if(!bossAlive){ openStagesBtn.click(); } else playerAttack('ranged'); });
 
-/* init */
-updateUI();
-buildStages();
+/* Show/hide mobile fight controls based on bossAlive */
 setInterval(()=>{ if (bossAlive) showFightControls(); else hideFightControls(); }, 500);
 
-/* cleanup */
+/* Initialization */
+updateUI();
+buildStages();
+
+/* Cleanup intervals on unload */
 window.addEventListener('beforeunload', ()=>{ if (bossAttackIntervalId) clearInterval(bossAttackIntervalId); });
 
-/* debug */
-window.__hc = { buyDataCenter, playerAttack, startStage, computeBossHPForStage, computeBossAttackForStage };
+/* Debug helpers */
+window.__hc = { buyDataCenter, playerAttack, startStage, computeBossHPForStage, computeBossAttackForStage, getState:()=>({coins,dcCount,dcCost,unlockedStage}) };
 </script>
 </body>
 </html>
