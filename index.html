@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Happy Coin: Crypto War — v5 fixed</title>
+<title>Happy Coin: Crypto War — final</title>
 <style>
   :root{
     --bg1:#070709; --bg2:#121217; --accent:#00ffea; --danger:#ff004c; --purple:#7d00b2;
@@ -19,7 +19,6 @@
   .chip{background:#0e0e10;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
   main{width:100%; max-width:1100px; display:flex; flex-direction:column; align-items:center; gap:12px}
   .card{width:100%; background:linear-gradient(180deg,#0b0b0d, #101012); border-radius:12px; padding:14px; box-shadow:0 6px 20px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.03)}
-  /* center boss visual exactly like previous version */
   .boss-visual{display:flex; flex-direction:column; align-items:center; gap:8px}
   .darknode { position:relative; width:220px; height:270px; border-radius:18px; background:linear-gradient(145deg,#141416,#0b0b0d); border:3px solid rgba(85,0,255,0.18); box-shadow:0 0 30px rgba(85,0,255,0.12) inset, 0 18px 40px rgba(0,0,0,0.6); overflow:hidden; }
   .aura{position:absolute; inset: -20px; background:radial-gradient(circle, rgba(125,0,178,0.16), transparent 35%); filter:blur(18px); z-index:0; animation:pulse 2.2s ease-in-out infinite alternate}
@@ -198,6 +197,18 @@ function recalcPlayerHPFromDC(){
   if (playerHP > playerMaxHP) playerHP = playerMaxHP;
 }
 
+/* Save helper */
+function saveData(){
+  try{
+    localStorage.setItem('hc_coins', String(coins));
+    localStorage.setItem('hc_dcCount', String(dcCount));
+    localStorage.setItem('hc_dcCost', String(dcCost));
+    localStorage.setItem('hc_unlocked', String(unlockedStage));
+  }catch(e){
+    console.warn('localStorage error', e);
+  }
+}
+
 /* UI updates + save (except playerHP) */
 function updateUI(){
   recalcPlayerHPFromDC();
@@ -209,16 +220,7 @@ function updateUI(){
   bossHPText.innerText = 'HP: ' + fmt(bossHP) + ' / ' + fmt(bossMaxHP);
   playerHPText.innerText = 'HP: ' + fmt(playerHP) + ' / ' + fmt(playerMaxHP);
   currentStageText.innerText = currentStage ? currentStage : '—';
-
-  // save safely
-  try{
-    localStorage.setItem('hc_coins', String(coins));
-    localStorage.setItem('hc_dcCount', String(dcCount));
-    localStorage.setItem('hc_dcCost', String(dcCost));
-    localStorage.setItem('hc_unlocked', String(unlockedStage));
-  }catch(e){
-    console.warn('localStorage error', e);
-  }
+  saveData();
 }
 
 /* formulas */
@@ -364,19 +366,23 @@ retreatBtn.addEventListener('click', ()=>{
   updateUI();
 });
 
-/* Buy DataCenter */
+/* === BUY DATA CENTER (NO LIMIT) === */
 function buyDataCenter(){
-  if (coins >= dcCost){
-    coins -= dcCost;
-    dcCount += 1;
-    dcCost = Math.round(dcCost * 1.8);
-    recalcPlayerHPFromDC();
-    playerHP = playerMaxHP;
-    log('دیتاسنتر خریدی — +25 Max HP و قدرت دمیج افزایش پیدا کرد! (×' + damageMultiplier().toFixed(2) + ')');
-    updateUI();
-  } else {
+  if (coins < dcCost){
     log('رمز ارز کافی نداری برای خرید دیتاسنتر.');
+    return;
   }
+  // no hard cap — user can buy unlimited DCs (limited only by coins)
+  coins -= dcCost;
+  dcCount += 1;
+  // price growth
+  dcCost = Math.round(dcCost * 1.8);
+  // each DC adds +25 max HP and increases damage multiplier
+  recalcPlayerHPFromDC();
+  // heal player on buy
+  playerHP = playerMaxHP;
+  log('دیتاسنتر خریدی — +25 Max HP و قدرت دمیج افزایش پیدا کرد! (×' + damageMultiplier().toFixed(2) + ')');
+  updateUI();
 }
 
 /* Modal open/close events */
