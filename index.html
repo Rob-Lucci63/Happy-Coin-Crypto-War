@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Happy Coin: Crypto War — v5</title>
+<title>Happy Coin: Crypto War — v5 fixed</title>
 <style>
   :root{
     --bg1:#070709; --bg2:#121217; --accent:#00ffea; --danger:#ff004c; --purple:#7d00b2;
@@ -19,6 +19,8 @@
   .chip{background:#0e0e10;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
   main{width:100%; max-width:1100px; display:flex; flex-direction:column; align-items:center; gap:12px}
   .card{width:100%; background:linear-gradient(180deg,#0b0b0d, #101012); border-radius:12px; padding:14px; box-shadow:0 6px 20px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.03)}
+  /* center boss visual exactly like previous version */
+  .boss-visual{display:flex; flex-direction:column; align-items:center; gap:8px}
   .darknode { position:relative; width:220px; height:270px; border-radius:18px; background:linear-gradient(145deg,#141416,#0b0b0d); border:3px solid rgba(85,0,255,0.18); box-shadow:0 0 30px rgba(85,0,255,0.12) inset, 0 18px 40px rgba(0,0,0,0.6); overflow:hidden; }
   .aura{position:absolute; inset: -20px; background:radial-gradient(circle, rgba(125,0,178,0.16), transparent 35%); filter:blur(18px); z-index:0; animation:pulse 2.2s ease-in-out infinite alternate}
   @keyframes pulse{from{transform:scale(1);opacity:.7}to{transform:scale(1.09);opacity:1}}
@@ -54,23 +56,6 @@
   .stage.locked{opacity:.45; filter:grayscale(20%)}
   .stage .num{font-weight:800; color:var(--accent); font-size:1.05rem}
   .stage .diff{font-size:0.82rem; margin-top:6px; color:#cfd8dc}
-  /* floating exit button bottom-right */
-  #modalExitBtn{
-    position:fixed;
-    bottom:18px;
-    right:18px;
-    z-index:110;
-    background:var(--danger);
-    color:#fff;
-    border:none;
-    padding:12px 16px;
-    border-radius:12px;
-    font-weight:800;
-    box-shadow:0 6px 18px rgba(0,0,0,0.6);
-    cursor:pointer;
-    display:none;
-  }
-  /* responsive */
   @media (max-width:520px){
     .modal-card{width:95%}
     .stages{grid-template-columns:repeat(2,1fr)}
@@ -148,9 +133,6 @@
   </div>
 </div>
 
-<!-- Floating exit bottom-right -->
-<button id="modalExitBtn" aria-label="بستن مراحل">خروج</button>
-
 <footer>
   <div>نسخه آزمایشی — موبایل و دسکتاپ هماهنگ</div>
   <div class="made-by">ساخته شده توسط Rob Lucci</div>
@@ -201,7 +183,6 @@ const openStagesBtn = document.getElementById('openStagesBtn');
 const stageModal = document.getElementById('stageModal');
 const stagesGrid = document.getElementById('stagesGrid');
 const closeModalBtn = document.getElementById('closeModalBtn');
-const modalExitBtn = document.getElementById('modalExitBtn');
 const buyDCBtn = document.getElementById('buyDCBtn');
 const retreatBtn = document.getElementById('retreatBtn');
 const currentStageText = document.getElementById('currentStageText');
@@ -271,14 +252,11 @@ function openStageModal(){
   buildStages();
   stageModal.classList.add('show');
   stageModal.setAttribute('aria-hidden','false');
-  modalExitBtn.style.display = 'inline-block';
-  // ensure focus on scroll container for keyboard nav
   stagesGrid.focus();
 }
 function closeStageModal(){
   stageModal.classList.remove('show');
   stageModal.setAttribute('aria-hidden','true');
-  modalExitBtn.style.display = 'none';
 }
 
 /* Start stage */
@@ -325,9 +303,9 @@ function playerAttack(type){
   lastAttackType = type;
   let base;
   if (type === 'melee'){
-    base = Math.floor(Math.random()*18) + 12; // 12-29
+    base = Math.floor(Math.random()*18) + 12;
   } else {
-    base = Math.floor(Math.random()*12) + 6; // 6-17
+    base = Math.floor(Math.random()*12) + 6;
   }
   const dmg = Math.round(base * damageMultiplier());
   bossHP -= dmg;
@@ -369,7 +347,6 @@ function endFight(victory){
     const loss = Math.min(coins, Math.round(20 * Math.max(1,currentStage)));
     coins -= loss;
     log('شکست خوردی... از دست دادی ' + loss + ' سکه');
-    // playerHP stays at 0 until stage restart (as requested)
   }
   currentStage = 0;
   updateUI();
@@ -394,7 +371,7 @@ function buyDataCenter(){
     dcCount += 1;
     dcCost = Math.round(dcCost * 1.8);
     recalcPlayerHPFromDC();
-    playerHP = playerMaxHP; // heal on buy
+    playerHP = playerMaxHP;
     log('دیتاسنتر خریدی — +25 Max HP و قدرت دمیج افزایش پیدا کرد! (×' + damageMultiplier().toFixed(2) + ')');
     updateUI();
   } else {
@@ -405,7 +382,6 @@ function buyDataCenter(){
 /* Modal open/close events */
 openStagesBtn.addEventListener('click', openStageModal);
 closeModalBtn.addEventListener('click', closeStageModal);
-modalExitBtn.addEventListener('click', closeStageModal);
 
 /* Keyboard attacks */
 document.addEventListener('keydown', (e)=>{
@@ -425,11 +401,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('meleeBtn').addEventListener('click', ()=>{ if(!bossAlive){ openStageModal(); } else playerAttack('melee'); });
   document.getElementById('rangedBtn').addEventListener('click', ()=>{ if(!bossAlive){ openStageModal(); } else playerAttack('ranged'); });
 
-  // Build stages initially
   buildStages();
-  // Make sure exit button visibility matches modal state
-  modalExitBtn.style.display = 'none';
-  // Initial UI
   updateUI();
 });
 
