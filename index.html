@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Happy Coin: Crypto War — final</title>
+<title>Happy Coin: Crypto War — final fixed</title>
 <style>
   :root{
     --bg1:#070709; --bg2:#121217; --accent:#00ffea; --danger:#ff004c; --purple:#7d00b2;
@@ -388,6 +388,7 @@ function buyDataCenter(){
 /* Modal open/close events */
 openStagesBtn.addEventListener('click', openStageModal);
 closeModalBtn.addEventListener('click', closeStageModal);
+buyDCBtn.addEventListener('click', buyDataCenter); /* <-- این خط اضافه شد */
 
 /* Keyboard attacks */
 document.addEventListener('keydown', (e)=>{
