@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Happy Coin: Crypto War — Save v1</title>
+<title>Happy Coin: Crypto War — v4 (DC -> HP, 34 stages)</title>
 <style>
   :root{
     --bg1:#070709; --bg2:#121217; --accent:#00ffea; --danger:#ff004c; --purple:#7d00b2;
@@ -13,24 +13,16 @@
     margin:0; min-height:100vh; background:linear-gradient(180deg,var(--bg1),var(--bg2));
     color:#e9eef0; display:flex; flex-direction:column; align-items:center; gap:12px; padding:18px;
   }
-  header{width:100%; max-width:960px; display:flex; justify-content:space-between; align-items:center; gap:8px}
+  header{width:100%; max-width:1100px; display:flex; justify-content:space-between; align-items:center; gap:8px}
   h1{color:var(--accent); font-size:1.4rem; margin:0}
   .top-stats{display:flex; gap:10px; align-items:center; font-size:0.95rem}
   .chip{background:#0e0e10;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
-  main{width:100%; max-width:960px; display:flex; flex-direction:column; align-items:center; gap:12px}
+  main{width:100%; max-width:1100px; display:flex; flex-direction:column; align-items:center; gap:12px}
   .card{width:100%; background:linear-gradient(180deg,#0b0b0d, #101012); border-radius:12px; padding:14px; box-shadow:0 6px 20px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.03)}
-  .boss-visual{display:flex; flex-direction:column; align-items:center; gap:8px}
-  .darknode {
-    position:relative; width:220px; height:270px; border-radius:18px; background:linear-gradient(145deg,#141416,#0b0b0d);
-    border:3px solid rgba(85,0,255,0.18); box-shadow:0 0 30px rgba(85,0,255,0.12) inset, 0 18px 40px rgba(0,0,0,0.6);
-    overflow:hidden;
-  }
+  .darknode { position:relative; width:220px; height:270px; border-radius:18px; background:linear-gradient(145deg,#141416,#0b0b0d); border:3px solid rgba(85,0,255,0.18); box-shadow:0 0 30px rgba(85,0,255,0.12) inset, 0 18px 40px rgba(0,0,0,0.6); overflow:hidden; }
   .aura{position:absolute; inset: -20px; background:radial-gradient(circle, rgba(125,0,178,0.16), transparent 35%); filter:blur(18px); z-index:0; animation:pulse 2.2s ease-in-out infinite alternate}
   @keyframes pulse{from{transform:scale(1);opacity:.7}to{transform:scale(1.09);opacity:1}}
-  .circuit-lines{position:absolute; inset:0; background-image:
-    linear-gradient(90deg, rgba(0,255,234,0.06) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(0,255,234,0.03) 1px, transparent 1px);
-    background-size:8px 40px, 40px 8px; opacity:.8; mix-blend-mode:screen; transform:translateY(0); animation:glitch 1s infinite}
+  .circuit-lines{position:absolute; inset:0; background-image: linear-gradient(90deg, rgba(0,255,234,0.06) 1px, transparent 1px), linear-gradient(0deg, rgba(0,255,234,0.03) 1px, transparent 1px); background-size:8px 40px, 40px 8px; opacity:.8; mix-blend-mode:screen; transform:translateY(0); animation:glitch 1s infinite}
   @keyframes glitch{0%{transform:translate(0,0)}25%{transform:translate(-2px,1px)}50%{transform:translate(1px,-2px)}75%{transform:translate(-1px,2px)}100%{transform:translate(0,0)}}
   .eyes{position:absolute; top:38px; width:100%; display:flex; justify-content:space-between; padding:0 32px; z-index:2}
   .eye{width:26px; height:26px; background:radial-gradient(circle, #ff6b6b 0%, #ff1a1a 35%, #8f0000 70%); border-radius:50%; box-shadow:0 0 14px rgba(255,20,20,0.9), 0 0 26px rgba(255,80,80,0.15)}
@@ -47,11 +39,11 @@
   .btn{background:var(--accent); color:#001; border:none; padding:10px 14px; border-radius:8px; font-weight:700; cursor:pointer}
   .btn.secondary{background:#222; color:#eaeaea; border:1px solid rgba(255,255,255,0.03)}
   .btn.ghost{background:transparent; border:1px dashed rgba(255,255,255,0.04)}
-  .log{background:#0b0b0d; width:100%; max-width:760px; padding:12px; border-radius:10px; font-size:0.9rem; max-height:200px; overflow:auto; border:1px solid rgba(255,255,255,0.02)}
+  .log{background:#0b0b0d; width:100%; max-width:980px; padding:12px; border-radius:10px; font-size:0.9rem; max-height:240px; overflow:auto; border:1px solid rgba(255,255,255,0.02)}
   .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
   .stats-box{display:flex; gap:8px; align-items:center}
   .small{font-size:0.87rem; opacity:0.9}
-  footer{margin-top:6px; opacity:.9; font-size:0.95rem; color:#cfd8dc; text-align:center; width:100%; max-width:960px}
+  footer{margin-top:6px; opacity:.9; font-size:0.95rem; color:#cfd8dc; text-align:center; width:100%; max-width:1100px}
   .made-by{font-weight:700; color:#ffd59a; margin-top:6px}
   .modal{position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; padding:18px; z-index:40}
   .modal.show{display:flex}
@@ -87,7 +79,7 @@
     </div>
     <div class="name-tag">DarkNode</div>
 
-    <div style="width:100%;max-width:760px;margin-top:10px">
+    <div style="width:100%;max-width:980px;margin-top:10px">
       <div class="hp-row">
         <div class="hp-text">باس</div>
         <div class="bar-wrap">
@@ -112,6 +104,9 @@
       <button class="btn secondary" id="buyDCBtn">خرید دیتاسنتر</button>
       <button class="btn ghost" id="retreatBtn" style="display:none">فرار</button>
     </div>
+    <div style="margin-top:10px; font-size:0.9rem; color:#cfd8dc; text-align:center;">
+      هر دیتاسنتر: <strong>+25 Max HP</strong> و افزایش دمیج (همون مودِ قبلی)
+    </div>
   </section>
 
   <section class="card">
@@ -127,7 +122,7 @@
 <!-- Stage modal -->
 <div id="stageModal" class="modal" aria-hidden="true">
   <div class="modal-card">
-    <h3 style="margin:0 0 8px 0">انتخاب مرحله (۱۲ مرحله)</h3>
+    <h3 style="margin:0 0 8px 0">انتخاب مرحله (۳۴ مرحله)</h3>
     <div class="stages" id="stagesGrid"></div>
     <div style="height:10px"></div>
     <div style="text-align:center"><button class="btn secondary" id="closeModalBtn">بستن</button></div>
@@ -144,14 +139,15 @@
 let coins = 0;
 let dcCount = 0;
 let dcCost = 50;
-let playerMaxHP = 100;
+const BASE_PLAYER_MAX_HP = 100; // base max HP (without DC)
+let playerMaxHP = BASE_PLAYER_MAX_HP;
 let playerHP = playerMaxHP; // not saved across sessions
 let bossMaxHP = 300;
 let bossHP = bossMaxHP;
-let bossAlive = false;
 let bossAttackStrength = 8;
+let bossAlive = false;
 let currentStage = 0;
-const TOTAL_STAGES = 12;
+const TOTAL_STAGES = 34;
 
 /* LOAD SAVED DATA from localStorage (except playerHP) */
 let unlockedStage = Number(localStorage.getItem('hc_unlocked')) || 1;
@@ -182,8 +178,17 @@ const statusText = document.getElementById('statusText');
 function fmt(n){ return Math.round(n); }
 function log(msg){ logEl.innerHTML = '> ' + msg + '<br>' + logEl.innerHTML; }
 
+/* Apply DC effects to playerMaxHP */
+function recalcPlayerHPFromDC(){
+  // each DC adds +25 to max HP
+  playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
+  // if current HP > new max (shouldn't), cap it
+  if (playerHP > playerMaxHP) playerHP = playerMaxHP;
+}
+
 /* UI updates + save (except playerHP) */
 function updateUI(){
+  recalcPlayerHPFromDC();
   coinsEl.innerText = fmt(coins);
   dcCountEl.innerText = dcCount;
   dcCostEl.innerText = fmt(dcCost);
@@ -204,14 +209,16 @@ function updateUI(){
   }
 }
 
-/* Stage difficulty formula */
+/* Stage difficulty formula
+   NOTE: boss HP growth factor reduced to 1.5 (was 1.6) to keep later levels achievable.
+*/
 function computeBossHPForStage(stage){
-  return Math.round(300 * Math.pow(1.6, stage-1));
+  return Math.round(300 * Math.pow(1.5, stage-1));
 }
 function computeBossAttackForStage(stage){
-  return Math.round(8 * Math.pow(1.25, stage-1));
+  return Math.round(8 * Math.pow(1.22, stage-1)); // slightly milder attack growth
 }
-function damageMultiplier(){ return 1 + dcCount * 0.6; } // each DC adds +60% damage
+function damageMultiplier(){ return 1 + dcCount * 0.6; } // each DC adds +60% damage (kept)
 
 /* Buy DataCenter */
 function buyDataCenter(){
@@ -219,7 +226,10 @@ function buyDataCenter(){
     coins -= dcCost;
     dcCount += 1;
     dcCost = Math.round(dcCost * 1.8);
-    log('دیتاسنتر خریدی — قدرت حمله‌ات افزایش یافت! (×' + damageMultiplier().toFixed(2) + ')');
+    // recalc playerHP max and heal player fully when buying DC (helpful)
+    recalcPlayerHPFromDC();
+    playerHP = playerMaxHP;
+    log('دیتاسنتر خریدی — +25 Max HP و قدرت دمیج افزایش پیدا کرد! (×' + damageMultiplier().toFixed(2) + ')');
     updateUI();
   } else {
     log('رمز ارز کافی نداری برای خرید دیتاسنتر.');
@@ -247,9 +257,9 @@ function buildStages(){
   }
 }
 function difficultyLabel(s){
-  if (s<=3) return 'آسان';
-  if (s<=7) return 'متوسط';
-  if (s<=10) return 'سخت';
+  if (s<=4) return 'آسان';
+  if (s<=12) return 'متوسط';
+  if (s<=24) return 'سخت';
   return 'نهایی';
 }
 
@@ -266,6 +276,7 @@ function startStage(stage){
   bossHP = bossMaxHP;
   bossAttackStrength = computeBossAttackForStage(stage);
   // player resets HP (not saved between sessions)
+  recalcPlayerHPFromDC();
   playerHP = playerMaxHP;
   bossAlive = true;
   statusText.innerText = 'در حال مبارزه (مرحله '+stage+')';
@@ -279,12 +290,12 @@ function startStage(stage){
 let bossAttackIntervalId = null;
 function startBossLoop(stage){
   if (bossAttackIntervalId) clearInterval(bossAttackIntervalId);
-  const interval = Math.max(700, 1500 - (stage-1)*70); // higher stages attack faster
+  const interval = Math.max(600, 1400 - (stage-1)*30); // higher stages attack faster but capped
   bossAttackIntervalId = setInterval(()=>{
     if (!bossAlive) return;
     const base = computeBossAttackForStage(stage);
     const multiplier = (lastAttackType === 'melee') ? 1.45 : 1.0;
-    const dmg = Math.max(1, Math.round(base * multiplier * (0.9 + Math.random()*0.3)));
+    const dmg = Math.max(1, Math.round(base * multiplier * (0.9 + Math.random()*0.35)));
     playerHP -= dmg;
     log('DarkNode حمله کرد و ' + dmg + ' دمیج زد! (مرحله '+stage+')');
     if (playerHP <= 0){
@@ -335,7 +346,8 @@ function endFight(victory){
   if (victory){
     const baseReward = Math.round(120 * Math.max(1,currentStage) * (1 + dcCount*0.1));
     coins += baseReward;
-    // refill player's HP fully AFTER victory (explicit per request)
+    // refill player's HP fully AFTER victory
+    recalcPlayerHPFromDC();
     playerHP = playerMaxHP;
     log('تبریک! باس شکست خورد. دریافتی: +' + baseReward + ' سکه');
     log('جان تو پس از پیروزی کامل بازیابی شد.');
@@ -349,9 +361,8 @@ function endFight(victory){
     const loss = Math.min(coins, Math.round(20 * Math.max(1,currentStage)));
     coins -= loss;
     log('شکست خوردی... از دست دادی ' + loss + ' سکه');
-    // Do NOT refill HP on defeat (player will have 0 and can retry which resets HP when starting a stage)
+    // playerHP remains 0; when they start a stage it will reset to playerMaxHP
   }
-  // reset stage
   currentStage = 0;
   updateUI();
 }
@@ -374,7 +385,6 @@ buyDCBtn.addEventListener('click', buyDataCenter);
 /* Keyboard attacks (desktop) */
 document.addEventListener('keydown', (e)=>{
   if (!bossAlive) return;
-  // z / x keys
   if (e.key === 'z' || e.key === 'Z') playerAttack('melee');
   if (e.key === 'x' || e.key === 'X') playerAttack('ranged');
 });
@@ -413,6 +423,8 @@ document.getElementById('rangedBtn').addEventListener('click', ()=>{ if(!bossAli
 setInterval(()=>{ if (bossAlive) showFightControls(); else hideFightControls(); }, 500);
 
 /* Initialization */
+recalcPlayerHPFromDC();
+playerHP = playerMaxHP; // ensure fresh HP on load
 updateUI();
 buildStages();
 
@@ -420,7 +432,7 @@ buildStages();
 window.addEventListener('beforeunload', ()=>{ if (bossAttackIntervalId) clearInterval(bossAttackIntervalId); });
 
 /* Debug helpers */
-window.__hc = { buyDataCenter, playerAttack, startStage, computeBossHPForStage, computeBossAttackForStage, getState:()=>({coins,dcCount,dcCost,unlockedStage}) };
+window.__hc = { buyDataCenter, playerAttack, startStage, computeBossHPForStage, computeBossAttackForStage, getState:()=>({coins,dcCount,dcCost,unlockedStage,playerMaxHP}) };
 </script>
 </body>
 </html>
