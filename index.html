@@ -1,438 +1,198 @@
-<!doctype html>
-<html lang="fa" dir="rtl">
+<!DOCTYPE html>
+<html lang="fa">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Happy Coin: Crypto War — v4 (DC -> HP, 34 stages)</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boss Fight</title>
 <style>
-  :root{
-    --bg1:#070709; --bg2:#121217; --accent:#00ffea; --danger:#ff004c; --purple:#7d00b2;
-  }
-  *{box-sizing:border-box;font-family:Tahoma, Arial, sans-serif}
-  body{
-    margin:0; min-height:100vh; background:linear-gradient(180deg,var(--bg1),var(--bg2));
-    color:#e9eef0; display:flex; flex-direction:column; align-items:center; gap:12px; padding:18px;
-  }
-  header{width:100%; max-width:1100px; display:flex; justify-content:space-between; align-items:center; gap:8px}
-  h1{color:var(--accent); font-size:1.4rem; margin:0}
-  .top-stats{display:flex; gap:10px; align-items:center; font-size:0.95rem}
-  .chip{background:#0e0e10;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
-  main{width:100%; max-width:1100px; display:flex; flex-direction:column; align-items:center; gap:12px}
-  .card{width:100%; background:linear-gradient(180deg,#0b0b0d, #101012); border-radius:12px; padding:14px; box-shadow:0 6px 20px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.03)}
-  .darknode { position:relative; width:220px; height:270px; border-radius:18px; background:linear-gradient(145deg,#141416,#0b0b0d); border:3px solid rgba(85,0,255,0.18); box-shadow:0 0 30px rgba(85,0,255,0.12) inset, 0 18px 40px rgba(0,0,0,0.6); overflow:hidden; }
-  .aura{position:absolute; inset: -20px; background:radial-gradient(circle, rgba(125,0,178,0.16), transparent 35%); filter:blur(18px); z-index:0; animation:pulse 2.2s ease-in-out infinite alternate}
-  @keyframes pulse{from{transform:scale(1);opacity:.7}to{transform:scale(1.09);opacity:1}}
-  .circuit-lines{position:absolute; inset:0; background-image: linear-gradient(90deg, rgba(0,255,234,0.06) 1px, transparent 1px), linear-gradient(0deg, rgba(0,255,234,0.03) 1px, transparent 1px); background-size:8px 40px, 40px 8px; opacity:.8; mix-blend-mode:screen; transform:translateY(0); animation:glitch 1s infinite}
-  @keyframes glitch{0%{transform:translate(0,0)}25%{transform:translate(-2px,1px)}50%{transform:translate(1px,-2px)}75%{transform:translate(-1px,2px)}100%{transform:translate(0,0)}}
-  .eyes{position:absolute; top:38px; width:100%; display:flex; justify-content:space-between; padding:0 32px; z-index:2}
-  .eye{width:26px; height:26px; background:radial-gradient(circle, #ff6b6b 0%, #ff1a1a 35%, #8f0000 70%); border-radius:50%; box-shadow:0 0 14px rgba(255,20,20,0.9), 0 0 26px rgba(255,80,80,0.15)}
-  .core{position:absolute; left:50%; transform:translateX(-50%); bottom:48px; width:140px; height:80px; border-radius:8px; background:linear-gradient(180deg,#09090a,#111); border:2px solid rgba(0,255,234,0.04); box-shadow:0 0 18px rgba(125,0,178,0.06) inset}
-  .name-tag{text-align:center;margin-top:4px;color:var(--accent); font-family:monospace; font-weight:700; text-shadow:0 0 8px rgba(0,255,234,0.1)}
-  .hp-row{display:flex; gap:10px; align-items:center; width:100%}
-  .bar-wrap{flex:1; background:#0b0b0d; padding:8px; border-radius:8px}
-  .bar{height:18px; background:#222; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.02)}
-  .bar > i{display:block; height:100%; width:100%; transition:width .25s linear}
-  .bar.boss > i{background:linear-gradient(90deg,var(--danger),var(--purple))}
-  .bar.player > i{background:linear-gradient(90deg,#24d14f,#9be46b)}
-  .hp-text{min-width:90px; text-align:center; font-size:0.9rem}
-  .controls{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
-  .btn{background:var(--accent); color:#001; border:none; padding:10px 14px; border-radius:8px; font-weight:700; cursor:pointer}
-  .btn.secondary{background:#222; color:#eaeaea; border:1px solid rgba(255,255,255,0.03)}
-  .btn.ghost{background:transparent; border:1px dashed rgba(255,255,255,0.04)}
-  .log{background:#0b0b0d; width:100%; max-width:980px; padding:12px; border-radius:10px; font-size:0.9rem; max-height:240px; overflow:auto; border:1px solid rgba(255,255,255,0.02)}
-  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
-  .stats-box{display:flex; gap:8px; align-items:center}
-  .small{font-size:0.87rem; opacity:0.9}
-  footer{margin-top:6px; opacity:.9; font-size:0.95rem; color:#cfd8dc; text-align:center; width:100%; max-width:1100px}
-  .made-by{font-weight:700; color:#ffd59a; margin-top:6px}
-  .modal{position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; padding:18px; z-index:40}
-  .modal.show{display:flex}
-  .modal-card{width:100%; max-width:760px; background:linear-gradient(180deg,#0b0b0d,#0f0f11); padding:14px; border-radius:12px; border:1px solid rgba(255,255,255,0.03)}
-  .stages{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px}
-  .stage{padding:10px; background:#0e0e10; border-radius:8px; text-align:center; cursor:pointer; border:1px solid rgba(255,255,255,0.02)}
-  .stage.locked{opacity:.45; filter:grayscale(20%)}
-  .stage .num{font-weight:800; color:var(--accent); font-size:1.1rem}
-  .stage .diff{font-size:0.82rem; margin-top:6px; color:#cfd8dc}
-  @media (max-width:520px){
-    .darknode{width:160px;height:200px}
-    .hp-text{min-width:70px;font-size:0.85rem}
-  }
+body {
+    font-family: sans-serif;
+    background: #111;
+    color: white;
+    text-align: center;
+    margin: 0;
+}
+button {
+    padding: 10px 20px;
+    margin: 10px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+#stageModal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+}
+#stageList {
+    width: 80%;
+    max-height: 70%;
+    overflow-y: auto;
+    background: #222;
+    border-radius: 10px;
+    padding: 20px;
+}
+.stage-btn {
+    display: inline-block;
+    background: #444;
+    color: white;
+    margin: 5px;
+    padding: 10px;
+    border-radius: 6px;
+}
+.stage-btn:disabled {
+    background: gray;
+    cursor: not-allowed;
+}
+#exitBtn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: red;
+    color: white;
+    font-size: 20px;
+    border-radius: 50px;
+    padding: 12px 18px;
+    z-index: 200;
+}
+#hud {
+    margin-top: 20px;
+}
+.hp-bar {
+    height: 20px;
+    width: 300px;
+    background: gray;
+    border-radius: 10px;
+    margin: auto;
+    overflow: hidden;
+}
+.hp-fill {
+    height: 100%;
+    background: green;
+}
 </style>
 </head>
 <body>
-<header>
-  <h1>Happy Coin: Crypto War</h1>
-  <div class="top-stats">
-    <div class="chip">رمز ارز: <strong id="coins">0</strong> 🪙</div>
-    <div class="chip">دیتاسنتر: <strong id="dcCount">0</strong></div>
-    <div class="chip">قیمت بعدی DC: <strong id="dcCost">50</strong> 🪙</div>
-  </div>
-</header>
 
-<main>
-  <section class="card boss-visual">
-    <div class="darknode">
-      <div class="aura"></div>
-      <div class="circuit-lines"></div>
-      <div class="eyes"><div class="eye"></div><div class="eye"></div></div>
-      <div class="core"></div>
-    </div>
-    <div class="name-tag">DarkNode</div>
+<h1>نبرد باس</h1>
+<div id="hud">
+    <p>سکه‌ها: <span id="coins">0</span></p>
+    <p>دیتا سنتر: <span id="dcCount">0</span></p>
+</div>
+<div>
+    <p>جون شما</p>
+    <div class="hp-bar"><div id="playerHPBar" class="hp-fill"></div></div>
+    <p>جون باس</p>
+    <div class="hp-bar"><div id="bossHPBar" class="hp-fill"></div></div>
+</div>
+<button onclick="openStages()">انتخاب مرحله</button>
+<button onclick="buyDataCenter()">خرید دیتا سنتر</button>
+<button onclick="attack()">حمله</button>
 
-    <div style="width:100%;max-width:980px;margin-top:10px">
-      <div class="hp-row">
-        <div class="hp-text">باس</div>
-        <div class="bar-wrap">
-          <div class="bar boss"><i id="bossBar" style="width:100%"></i></div>
-        </div>
-        <div class="hp-text" id="bossHPText">HP: 300</div>
-      </div>
-
-      <div style="height:8px"></div>
-
-      <div class="hp-row">
-        <div class="hp-text">تو</div>
-        <div class="bar-wrap">
-          <div class="bar player"><i id="playerBar" style="width:100%"></i></div>
-        </div>
-        <div class="hp-text" id="playerHPText">HP: 100</div>
-      </div>
-    </div>
-
-    <div class="controls" style="margin-top:12px">
-      <button class="btn" id="openStagesBtn">حمله به DarkNode</button>
-      <button class="btn secondary" id="buyDCBtn">خرید دیتاسنتر</button>
-      <button class="btn ghost" id="retreatBtn" style="display:none">فرار</button>
-    </div>
-    <div style="margin-top:10px; font-size:0.9rem; color:#cfd8dc; text-align:center;">
-      هر دیتاسنتر: <strong>+25 Max HP</strong> و افزایش دمیج (همون مودِ قبلی)
-    </div>
-  </section>
-
-  <section class="card">
-    <div class="row" style="justify-content:space-between;align-items:center">
-      <div class="stats-box small">مرحله فعلی: <strong id="currentStageText">0</strong></div>
-      <div class="stats-box small">وضعیت: <strong id="statusText">آماده</strong></div>
-    </div>
-    <div style="height:10px"></div>
-    <div class="log" id="log">> خوش آمدی! برای شروع، روی «حمله به DarkNode» بزن.</div>
-  </section>
-</main>
-
-<!-- Stage modal -->
-<div id="stageModal" class="modal" aria-hidden="true">
-  <div class="modal-card">
-    <h3 style="margin:0 0 8px 0">انتخاب مرحله (۳۴ مرحله)</h3>
-    <div class="stages" id="stagesGrid"></div>
-    <div style="height:10px"></div>
-    <div style="text-align:center"><button class="btn secondary" id="closeModalBtn">بستن</button></div>
-  </div>
+<div id="stageModal">
+    <div id="stageList"></div>
+    <button id="exitBtn" onclick="closeStages()">خروج</button>
 </div>
 
-<footer>
-  <div>نسخه آزمایشی — موبایل و دسکتاپ هماهنگ</div>
-  <div class="made-by">ساخته شده توسط Rob Lucci</div>
-</footer>
+<p id="credit" style="margin-top:40px;">ساخته شده توسط Rob Lucci</p>
 
 <script>
-/* === GAME STATE === */
-let coins = 0;
-let dcCount = 0;
-let dcCost = 50;
-const BASE_PLAYER_MAX_HP = 100; // base max HP (without DC)
-let playerMaxHP = BASE_PLAYER_MAX_HP;
-let playerHP = playerMaxHP; // not saved across sessions
-let bossMaxHP = 300;
+let coins = parseInt(localStorage.getItem('coins')) || 0;
+let dcCount = parseInt(localStorage.getItem('dcCount')) || 0;
+let unlockedStage = parseInt(localStorage.getItem('unlockedStage')) || 1;
+let currentStage = 1;
+let playerMaxHP = 100;
+let playerHP = playerMaxHP;
+let bossMaxHP = 100;
 let bossHP = bossMaxHP;
-let bossAttackStrength = 8;
-let bossAlive = false;
-let currentStage = 0;
-const TOTAL_STAGES = 34;
 
-/* LOAD SAVED DATA from localStorage (except playerHP) */
-let unlockedStage = Number(localStorage.getItem('hc_unlocked')) || 1;
-coins = Number(localStorage.getItem('hc_coins')) || 0;
-dcCount = Number(localStorage.getItem('hc_dcCount')) || 0;
-dcCost = Number(localStorage.getItem('hc_dcCost')) || 50;
-if (!unlockedStage) unlockedStage = 1;
+updateHUD();
+generateStages();
 
-/* DOM */
-const coinsEl = document.getElementById('coins');
-const dcCountEl = document.getElementById('dcCount');
-const dcCostEl = document.getElementById('dcCost');
-const bossBarEl = document.getElementById('bossBar');
-const playerBarEl = document.getElementById('playerBar');
-const bossHPText = document.getElementById('bossHPText');
-const playerHPText = document.getElementById('playerHPText');
-const logEl = document.getElementById('log');
-const openStagesBtn = document.getElementById('openStagesBtn');
-const stageModal = document.getElementById('stageModal');
-const stagesGrid = document.getElementById('stagesGrid');
-const closeModalBtn = document.getElementById('closeModalBtn');
-const buyDCBtn = document.getElementById('buyDCBtn');
-const retreatBtn = document.getElementById('retreatBtn');
-const currentStageText = document.getElementById('currentStageText');
-const statusText = document.getElementById('statusText');
-
-/* Utility */
-function fmt(n){ return Math.round(n); }
-function log(msg){ logEl.innerHTML = '> ' + msg + '<br>' + logEl.innerHTML; }
-
-/* Apply DC effects to playerMaxHP */
-function recalcPlayerHPFromDC(){
-  // each DC adds +25 to max HP
-  playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
-  // if current HP > new max (shouldn't), cap it
-  if (playerHP > playerMaxHP) playerHP = playerMaxHP;
+function updateHUD(){
+    document.getElementById('coins').textContent = coins;
+    document.getElementById('dcCount').textContent = dcCount;
+    document.getElementById('playerHPBar').style.width = (playerHP / playerMaxHP * 100) + '%';
+    document.getElementById('bossHPBar').style.width = (bossHP / bossMaxHP * 100) + '%';
 }
 
-/* UI updates + save (except playerHP) */
-function updateUI(){
-  recalcPlayerHPFromDC();
-  coinsEl.innerText = fmt(coins);
-  dcCountEl.innerText = dcCount;
-  dcCostEl.innerText = fmt(dcCost);
-  bossBarEl.style.width = (Math.max(0,bossHP)/bossMaxHP*100) + '%';
-  playerBarEl.style.width = (Math.max(0,playerHP)/playerMaxHP*100) + '%';
-  bossHPText.innerText = 'HP: ' + fmt(bossHP) + ' / ' + fmt(bossMaxHP);
-  playerHPText.innerText = 'HP: ' + fmt(playerHP) + ' / ' + fmt(playerMaxHP);
-  currentStageText.innerText = currentStage ? currentStage : '—';
-
-  // Save game data except playerHP
-  try{
-    localStorage.setItem('hc_coins', coins);
-    localStorage.setItem('hc_dcCount', dcCount);
-    localStorage.setItem('hc_dcCost', dcCost);
-    localStorage.setItem('hc_unlocked', unlockedStage);
-  }catch(e){
-    console.warn('localStorage error', e);
-  }
+function generateStages(){
+    const list = document.getElementById('stageList');
+    list.innerHTML = '';
+    for(let i=1; i<=34; i++){
+        const btn = document.createElement('button');
+        btn.textContent = 'مرحله ' + i;
+        btn.className = 'stage-btn';
+        if(i > unlockedStage) btn.disabled = true;
+        btn.onclick = () => { selectStage(i); };
+        list.appendChild(btn);
+    }
 }
 
-/* Stage difficulty formula
-   NOTE: boss HP growth factor reduced to 1.5 (was 1.6) to keep later levels achievable.
-*/
-function computeBossHPForStage(stage){
-  return Math.round(300 * Math.pow(1.5, stage-1));
+function openStages(){
+    document.getElementById('stageModal').style.display = 'flex';
 }
-function computeBossAttackForStage(stage){
-  return Math.round(8 * Math.pow(1.22, stage-1)); // slightly milder attack growth
-}
-function damageMultiplier(){ return 1 + dcCount * 0.6; } // each DC adds +60% damage (kept)
 
-/* Buy DataCenter */
+function closeStages(){
+    document.getElementById('stageModal').style.display = 'none';
+}
+
+function selectStage(stage){
+    currentStage = stage;
+    bossMaxHP = 100 + (stage - 1) * 50;
+    bossHP = bossMaxHP;
+    playerHP = playerMaxHP;
+    updateHUD();
+    closeStages();
+}
+
 function buyDataCenter(){
-  if (coins >= dcCost){
-    coins -= dcCost;
-    dcCount += 1;
-    dcCost = Math.round(dcCost * 1.8);
-    // recalc playerHP max and heal player fully when buying DC (helpful)
-    recalcPlayerHPFromDC();
-    playerHP = playerMaxHP;
-    log('دیتاسنتر خریدی — +25 Max HP و قدرت دمیج افزایش پیدا کرد! (×' + damageMultiplier().toFixed(2) + ')');
-    updateUI();
-  } else {
-    log('رمز ارز کافی نداری برای خرید دیتاسنتر.');
-  }
-}
-
-/* Stage modal population */
-function buildStages(){
-  stagesGrid.innerHTML = '';
-  for (let s=1;s<=TOTAL_STAGES;s++){
-    const stageDiv = document.createElement('div');
-    stageDiv.className = 'stage' + (s>unlockedStage ? ' locked' : '');
-    stageDiv.innerHTML = '<div class="num">مرحله '+s+'</div><div class="diff">سختی: '+difficultyLabel(s)+'</div>';
-    (function(stage){
-      stageDiv.addEventListener('click',()=>{
-        if (stage > unlockedStage){
-          log('این مرحله قفل است. اول مراحل قبل را کامل کن یا دیتاسنتر بخر.');
-          return;
-        }
-        startStage(stage);
-        closeStageModal();
-      });
-    })(s);
-    stagesGrid.appendChild(stageDiv);
-  }
-}
-function difficultyLabel(s){
-  if (s<=4) return 'آسان';
-  if (s<=12) return 'متوسط';
-  if (s<=24) return 'سخت';
-  return 'نهایی';
-}
-
-/* Modal controls */
-openStagesBtn.addEventListener('click', ()=>{ buildStages(); stageModal.classList.add('show'); stageModal.setAttribute('aria-hidden','false'); });
-closeModalBtn.addEventListener('click', ()=> closeStageModal());
-function closeStageModal(){ stageModal.classList.remove('show'); stageModal.setAttribute('aria-hidden','true'); }
-
-/* Start stage */
-function startStage(stage){
-  if (bossAlive) { log('الان در حال مبارزه‌ای — اول تمومش کن یا فرار کن.'); return; }
-  currentStage = stage;
-  bossMaxHP = computeBossHPForStage(stage);
-  bossHP = bossMaxHP;
-  bossAttackStrength = computeBossAttackForStage(stage);
-  // player resets HP (not saved between sessions)
-  recalcPlayerHPFromDC();
-  playerHP = playerMaxHP;
-  bossAlive = true;
-  statusText.innerText = 'در حال مبارزه (مرحله '+stage+')';
-  log('مرحله '+stage+' شروع شد! باس HP: '+bossMaxHP+' | حملهٔ باس: '+bossAttackStrength);
-  retreatBtn.style.display = 'inline-block';
-  startBossLoop(stage);
-  updateUI();
-}
-
-/* Boss loop */
-let bossAttackIntervalId = null;
-function startBossLoop(stage){
-  if (bossAttackIntervalId) clearInterval(bossAttackIntervalId);
-  const interval = Math.max(600, 1400 - (stage-1)*30); // higher stages attack faster but capped
-  bossAttackIntervalId = setInterval(()=>{
-    if (!bossAlive) return;
-    const base = computeBossAttackForStage(stage);
-    const multiplier = (lastAttackType === 'melee') ? 1.45 : 1.0;
-    const dmg = Math.max(1, Math.round(base * multiplier * (0.9 + Math.random()*0.35)));
-    playerHP -= dmg;
-    log('DarkNode حمله کرد و ' + dmg + ' دمیج زد! (مرحله '+stage+')');
-    if (playerHP <= 0){
-      playerHP = 0;
-      updateUI();
-      endFight(false);
+    if(coins >= 50){
+        coins -= 50;
+        dcCount++;
+        playerMaxHP += 20; // افزایش جون
+        localStorage.setItem('coins', coins);
+        localStorage.setItem('dcCount', dcCount);
+        updateHUD();
     } else {
-      updateUI();
+        alert("سکه کافی نداری!");
     }
-  }, interval);
 }
 
-/* Attack logic */
-let lastAttackType = null;
-function playerAttack(type){
-  if (!bossAlive){ log('الان باس نیست، مرحله انتخاب کن.'); return; }
-  lastAttackType = type;
-  let base;
-  if (type === 'melee'){
-    base = Math.floor(Math.random()*18) + 12; // 12-29
-  } else {
-    base = Math.floor(Math.random()*12) + 6; // 6-17
-  }
-  const dmg = Math.round(base * damageMultiplier());
-  bossHP -= dmg;
-  const reward = Math.round(8 * Math.max(1,currentStage) * (type==='melee' ? 1 : 1.1));
-  coins += reward;
-  log('تو زدی ('+ (type==='melee'?'تن به تن':'کریپتو') +') و ' + dmg + ' دمیج وارد کردی — +' + reward + ' سکه');
-  if (type === 'melee'){
-    const buff = Math.round(bossMaxHP * 0.02);
-    bossHP = Math.min(bossHP + buff, bossMaxHP + buff);
-    log('حالت تن به تن! باس برای لحظه‌ای قوی‌تر شد.');
-  }
-  updateUI();
-  if (bossHP <= 0){
-    bossHP = 0;
-    updateUI();
-    endFight(true);
-  }
-}
-
-/* End fight */
-function endFight(victory){
-  bossAlive = false;
-  statusText.innerText = victory ? 'برنده شدی!' : 'شکست خوردی';
-  if (bossAttackIntervalId){ clearInterval(bossAttackIntervalId); bossAttackIntervalId = null; }
-  retreatBtn.style.display = 'none';
-  if (victory){
-    const baseReward = Math.round(120 * Math.max(1,currentStage) * (1 + dcCount*0.1));
-    coins += baseReward;
-    // refill player's HP fully AFTER victory
-    recalcPlayerHPFromDC();
-    playerHP = playerMaxHP;
-    log('تبریک! باس شکست خورد. دریافتی: +' + baseReward + ' سکه');
-    log('جان تو پس از پیروزی کامل بازیابی شد.');
-    // unlock next stage
-    if (currentStage < TOTAL_STAGES && unlockedStage <= currentStage){
-      unlockedStage = currentStage + 1;
-      try{ localStorage.setItem('hc_unlocked', unlockedStage); }catch(e){}
-      log('مرحله بعد باز شد: ' + unlockedStage);
+function attack(){
+    let damage = 10 + dcCount * 5;
+    bossHP -= damage;
+    if(bossHP <= 0){
+        coins += 20;
+        if(currentStage === unlockedStage && unlockedStage < 34){
+            unlockedStage++;
+            localStorage.setItem('unlockedStage', unlockedStage);
+            generateStages();
+        }
+        localStorage.setItem('coins', coins);
+        bossHP = bossMaxHP;
+        playerHP = playerMaxHP; // پر کردن جون بعد از مرحله
+        updateHUD();
+        alert("مرحله " + currentStage + " رو بردی!");
+    } else {
+        let bossDamage = 15 + (currentStage - 1) * 2;
+        playerHP -= bossDamage;
+        if(playerHP <= 0){
+            playerHP = 0;
+            updateHUD();
+            alert("باختی! دوباره تلاش کن");
+            playerHP = playerMaxHP;
+            bossHP = bossMaxHP;
+        }
     }
-  } else {
-    const loss = Math.min(coins, Math.round(20 * Math.max(1,currentStage)));
-    coins -= loss;
-    log('شکست خوردی... از دست دادی ' + loss + ' سکه');
-    // playerHP remains 0; when they start a stage it will reset to playerMaxHP
-  }
-  currentStage = 0;
-  updateUI();
+    updateHUD();
 }
-
-/* Retreat */
-retreatBtn.addEventListener('click', ()=>{
-  if (!bossAlive) return;
-  bossAlive = false;
-  if (bossAttackIntervalId){ clearInterval(bossAttackIntervalId); bossAttackIntervalId = null; }
-  log('فرار کردی از مبارزه. سکه‌هاتو نگه دار!');
-  statusText.innerText = 'آماده';
-  retreatBtn.style.display = 'none';
-  currentStage = 0;
-  updateUI();
-});
-
-/* Buttons wiring */
-buyDCBtn.addEventListener('click', buyDataCenter);
-
-/* Keyboard attacks (desktop) */
-document.addEventListener('keydown', (e)=>{
-  if (!bossAlive) return;
-  if (e.key === 'z' || e.key === 'Z') playerAttack('melee');
-  if (e.key === 'x' || e.key === 'X') playerAttack('ranged');
-});
-
-/* Mobile-friendly quick action area */
-function showFightControls(){
-  const existing = document.getElementById('fightControls');
-  if (existing) return;
-  const cont = document.createElement('div');
-  cont.id = 'fightControls';
-  cont.style.position = 'fixed';
-  cont.style.left = '50%';
-  cont.style.transform = 'translateX(-50%)';
-  cont.style.bottom = '14px';
-  cont.style.zIndex = 50;
-  cont.style.display = 'flex';
-  cont.style.gap = '10px';
-  cont.innerHTML = '<button class="btn" id="meleeBtnMobile">حمله تن به تن</button><button class="btn secondary" id="rangedBtnMobile">حمله کریپتو</button>';
-  document.body.appendChild(cont);
-  document.getElementById('meleeBtnMobile').addEventListener('click', ()=>playerAttack('melee'));
-  document.getElementById('rangedBtnMobile').addEventListener('click', ()=>playerAttack('ranged'));
-}
-function hideFightControls(){ const e=document.getElementById('fightControls'); if(e) e.remove(); }
-
-/* Desktop quick attack buttons */
-const attackBar = document.createElement('div');
-attackBar.style.marginTop = '10px';
-attackBar.style.display = 'flex';
-attackBar.style.gap = '8px';
-attackBar.innerHTML = '<button class="btn" id="meleeBtn">حمله تن به تن (Melee)</button><button class="btn" id="rangedBtn">حمله کریپتو (Ranged)</button>';
-document.querySelector('main').insertBefore(attackBar, document.querySelector('.card:last-of-type'));
-document.getElementById('meleeBtn').addEventListener('click', ()=>{ if(!bossAlive){ openStagesBtn.click(); } else playerAttack('melee'); });
-document.getElementById('rangedBtn').addEventListener('click', ()=>{ if(!bossAlive){ openStagesBtn.click(); } else playerAttack('ranged'); });
-
-/* Show/hide mobile fight controls based on bossAlive */
-setInterval(()=>{ if (bossAlive) showFightControls(); else hideFightControls(); }, 500);
-
-/* Initialization */
-recalcPlayerHPFromDC();
-playerHP = playerMaxHP; // ensure fresh HP on load
-updateUI();
-buildStages();
-
-/* Cleanup intervals on unload */
-window.addEventListener('beforeunload', ()=>{ if (bossAttackIntervalId) clearInterval(bossAttackIntervalId); });
-
-/* Debug helpers */
-window.__hc = { buyDataCenter, playerAttack, startStage, computeBossHPForStage, computeBossAttackForStage, getState:()=>({coins,dcCount,dcCost,unlockedStage,playerMaxHP}) };
 </script>
 </body>
 </html>
