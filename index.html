@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Happy Coin — Undertale-style Combat (Patched)</title>
+<title>Happy Coin — Undertale-style Combat (SFX)</title>
 <style>
   :root{
     --bg1:#070709; --bg2:#121217; --accent:#00ffea; --danger:#ff004c; --purple:#7d00b2;
@@ -43,7 +43,7 @@
 </head>
 <body>
 <header>
-  <h1>Happy Coin: Crypto War — Undertale-style (Patched)</h1>
+  <h1>Happy Coin: Crypto War — SFX</h1>
   <div class="top-stats">
     <div class="chip">رمز ارز: <strong id="coins">0</strong> 🪙</div>
     <div class="chip">دیتاسنتر: <strong id="dcCount">0</strong></div>
@@ -116,12 +116,95 @@
 </div>
 
 <footer style="width:100%;max-width:1100px;margin-top:12px;text-align:center;color:#cfd8dc">
-  <div>نسخه آزمایشی — نسخه Undertale-like (Patched)</div>
+  <div>نسخه آزمایشی — نسخه Undertale-like + SFX</div>
   <div class="made-by">ساخته شده توسط Rob Lucci</div>
 </footer>
 
 <script>
-/* -------------------- helpers storage & safe log -------------------- */
+/* ================= Audio (Web Audio API SFX) ================= */
+let audioCtx = null;
+let audioReady = false;
+
+function initAudioContext(){
+  if (audioCtx) return;
+  try{
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    audioReady = true;
+  }catch(e){
+    console.warn('AudioContext not supported', e);
+    audioReady = false;
+  }
+}
+
+// ensure resume on user gesture (some browsers keep it suspended)
+function ensureAudioResume(){
+  if (!audioCtx) initAudioContext();
+  if (!audioCtx) return;
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume().then(()=>{ /* resumed */ }).catch(()=>{});
+  }
+}
+
+// helper to create short beep with envelope
+function playBeep(freq, duration=0.12, type='sine', volume=0.12){
+  if (!audioCtx) initAudioContext();
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type;
+  o.frequency.value = freq;
+  g.gain.value = volume;
+  o.connect(g);
+  g.connect(audioCtx.destination);
+  g.gain.setValueAtTime(volume, now);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  o.start(now);
+  o.stop(now + duration + 0.02);
+}
+
+// attack sound: small two-tone staccato
+function playAttack(){
+  ensureAudioResume();
+  if (!audioCtx) return;
+  playBeep(640, 0.08, 'sawtooth', 0.12);
+  setTimeout(()=> playBeep(940, 0.06, 'sine', 0.10), 80);
+}
+
+// hurt sound: short buzzy low hit
+function playHurt(){
+  ensureAudioResume();
+  if (!audioCtx) return;
+  // quick square with short noise-like effect by detuning
+  playBeep(160, 0.12, 'square', 0.16);
+  setTimeout(()=> playBeep(220, 0.09, 'sawtooth', 0.08), 40);
+}
+
+// win sound: small chord
+function playWin(){
+  ensureAudioResume();
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  const freqs = [440, 660, 880];
+  const gain = audioCtx.createGain();
+  gain.gain.value = 0.14;
+  gain.connect(audioCtx.destination);
+  const oscs = freqs.map((f)=>{ const o = audioCtx.createOscillator(); o.type='sine'; o.frequency.value = f; o.connect(gain); return o; });
+  oscs.forEach(o=>o.start(now));
+  gain.gain.setValueAtTime(0.14, now);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.7);
+  oscs.forEach(o=>o.stop(now + 0.72));
+}
+
+/* resume audio on first interaction */
+function attachAutoAudioResume(){
+  const resume = ()=>{ ensureAudioResume(); document.removeEventListener('pointerdown', resume); document.removeEventListener('keydown', resume); };
+  document.addEventListener('pointerdown', resume);
+  document.addEventListener('keydown', resume);
+}
+attachAutoAudioResume();
+
+/* ================= helpers storage & safe log ================= */
 function readNumber(key,fallback){
   try{ const v=localStorage.getItem(key); if(v===null) return fallback; const n=Number(v); return isNaN(n)?fallback:n; }catch(e){return fallback;}
 }
@@ -177,7 +260,6 @@ const closeStageModal = document.getElementById('closeStageModal');
 const timingUI = document.getElementById('timingUI');
 const pointerEl = document.getElementById('pointer');
 const sweetZoneEl = document.getElementById('sweetZone');
-const attackSpaceHint = document.getElementById('attackBtn');
 const resetBtn = document.getElementById('resetBtn');
 
 /* player (heart) representation */
@@ -266,6 +348,8 @@ function updatePhysics(dt){
     if (rectCircleColliding(bullets[i], playerRect)){
       const dmg = Math.max(1, Math.round(6 + Math.random()*6));
       playerHP -= dmg;
+      // play hurt SFX
+      playHurt();
       safeLog('حمله برخورد کرد — ' + dmg + ' دمیج');
       bullets.splice(i,1);
       if (playerHP <= 0){
@@ -378,6 +462,8 @@ function endFight(victory){
   timingUI.setAttribute('aria-hidden','true');
   hideTouchDrag();
   if (victory){
+    // play win SFX
+    playWin();
     const reward = Math.round(100 * Math.max(1,currentStage) * (1 + dcCount*0.08));
     coins += reward;
     safeLog('تبریک! باس شکست خورد — +' + reward + ' سکه');
@@ -452,7 +538,6 @@ function startTimingMinigame(){
     // compute quality
     const now = performance.now();
     const elapsed = (now - timing.startTime) / 1000;
-    // use current timing.pos (already updated)
     const winPos = timing.pos;
     const left = timing.sweetLeft;
     const right = timing.sweetLeft + timing.sweetWidth;
@@ -475,6 +560,9 @@ function startTimingMinigame(){
     bossHP -= dmg;
     const reward = Math.round(8 * Math.max(1,currentStage) * (1 + quality*0.25));
     coins += reward;
+
+    // play attack SFX
+    playAttack();
 
     safeLog('تو حمله زدی — کیفیت: ' + (['Fail','OK','Great','Perfect'][quality]) + ' | ' + dmg + ' دمیج — +' + reward + ' سکه');
     updateUI();
