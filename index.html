@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Happy Coin: Crypto War — Optimized v2</title>
+<title>Happy Coin — Undertale-style Combat</title>
 <style>
   :root{
     --bg1:#070709; --bg2:#121217; --accent:#00ffea; --danger:#ff004c; --purple:#7d00b2;
@@ -19,55 +19,30 @@
   .chip{background:#0e0e10;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
   main{width:100%; max-width:1100px; display:flex; flex-direction:column; align-items:center; gap:12px}
   .card{width:100%; background:linear-gradient(180deg,#0b0b0d, #101012); border-radius:12px; padding:14px; box-shadow:0 6px 20px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.03)}
-  .boss-visual{display:flex; flex-direction:column; align-items:center; gap:8px}
-  .darknode { position:relative; width:220px; height:270px; border-radius:18px; background:linear-gradient(145deg,#141416,#0b0b0d); border:3px solid rgba(85,0,255,0.18); box-shadow:0 0 30px rgba(85,0,255,0.12) inset, 0 18px 40px rgba(0,0,0,0.6); overflow:hidden; }
-  .aura{position:absolute; inset: -20px; background:radial-gradient(circle, rgba(125,0,178,0.16), transparent 35%); filter:blur(18px); z-index:0; animation:pulse 2.2s ease-in-out infinite alternate}
-  @keyframes pulse{from{transform:scale(1);opacity:.7}to{transform:scale(1.09);opacity:1}}
-  .circuit-lines{position:absolute; inset:0; background-image: linear-gradient(90deg, rgba(0,255,234,0.06) 1px, transparent 1px), linear-gradient(0deg, rgba(0,255,234,0.03) 1px, transparent 1px); background-size:8px 40px, 40px 8px; opacity:.8; mix-blend-mode:screen; transform:translateY(0); animation:glitch 1s infinite}
-  @keyframes glitch{0%{transform:translate(0,0)}25%{transform:translate(-2px,1px)}50%{transform:translate(1px,-2px)}75%{transform:translate(-1px,2px)}100%{transform:translate(0,0)}}
-  .eyes{position:absolute; top:38px; width:100%; display:flex; justify-content:space-between; padding:0 32px; z-index:2}
-  .eye{width:26px; height:26px; background:radial-gradient(circle, #ff6b6b 0%, #ff1a1a 35%, #8f0000 70%); border-radius:50%; box-shadow:0 0 14px rgba(255,20,20,0.9), 0 0 26px rgba(255,80,80,0.15)}
-  .core{position:absolute; left:50%; transform:translateX(-50%); bottom:48px; width:140px; height:80px; border-radius:8px; background:linear-gradient(180deg,#09090a,#111); border:2px solid rgba(0,255,234,0.04); box-shadow:0 0 18px rgba(125,0,178,0.06) inset}
-  .name-tag{text-align:center;margin-top:4px;color:var(--accent); font-family:monospace; font-weight:700; text-shadow:0 0 8px rgba(0,255,234,0.1)}
-  .hp-row{display:flex; gap:10px; align-items:center; width:100%}
-  .bar-wrap{flex:1; background:#0b0b0d; padding:8px; border-radius:8px}
-  .bar{height:18px; background:#222; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.02); position:relative;}
-  .bar > i{display:block; height:100%; width:100%; transition:width .25s linear}
-  .bar.boss > i{background:linear-gradient(90deg,var(--danger),var(--purple))}
-  .bar.player > i{background:linear-gradient(90deg,#24d14f,#9be46b)}
-  .hp-text{min-width:90px; text-align:center; font-size:0.9rem; position:relative;}
-  .hp-text span{position:absolute; right:50%; transform:translateX(50%); font-size:0.75rem; color:#cfd8dc}
-  .controls{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
+  .battle-area{display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap; width:100%}
+  .arena{background:linear-gradient(180deg,#0d0d0f,#0b0b0d); border-radius:10px; padding:12px; display:flex; flex-direction:column; align-items:center; width:100%; max-width:720px}
+  canvas{background:transparent; border-radius:8px; display:block; touch-action: none;}
+  .hud{width:100%; display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:8px}
+  .controls{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
   .btn{background:var(--accent); color:#001; border:none; padding:10px 14px; border-radius:8px; font-weight:700; cursor:pointer}
   .btn.secondary{background:#222; color:#eaeaea; border:1px solid rgba(255,255,255,0.03)}
-  .btn.ghost{background:transparent; border:1px dashed rgba(255,255,255,0.04)}
-  .log{background:#0b0b0d; width:100%; max-width:980px; padding:12px; border-radius:10px; font-size:0.9rem; max-height:240px; overflow:auto; border:1px solid rgba(255,255,255,0.02)}
-  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
-  .stats-box{display:flex; gap:8px; align-items:center}
+  .status{font-size:0.95rem}
+  .log{background:#0b0b0d; width:100%; max-width:980px; padding:12px; border-radius:10px; font-size:0.9rem; max-height:220px; overflow:auto; border:1px solid rgba(255,255,255,0.02)}
   .small{font-size:0.87rem; opacity:0.9}
-  footer{margin-top:6px; opacity:.9; font-size:0.95rem; color:#cfd8dc; text-align:center; width:100%; max-width:1100px}
   .made-by{font-weight:700; color:#ffd59a; margin-top:6px}
-  .modal{position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; padding:18px; z-index:40}
-  .modal.show{display:flex}
-  .modal-card{width:100%; max-width:760px; background:linear-gradient(180deg,#0b0b0d,#0f0f11); padding:14px; border-radius:12px; border:1px solid rgba(255,255,255,0.03); position:relative}
-  .stages{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; max-height:60vh; overflow:auto; padding:8px}
-  .stage{padding:12px; background:#0e0e10; border-radius:8px; text-align:center; cursor:pointer; border:1px solid rgba(255,255,255,0.02); user-select:none}
-  .stage.locked{opacity:.45; filter:grayscale(20%); pointer-events:none;}
-  .stage .num{font-weight:800; color:var(--accent); font-size:1.05rem}
-  .stage .diff{font-size:0.82rem; margin-top:6px; color:#cfd8dc}
-  @media (max-width:520px){
-    .modal-card{width:95%}
-    .stages{grid-template-columns:repeat(2,1fr)}
-  }
-  /* small responsive fixes */
-  @media (max-width:420px){
-    .hp-text{min-width:72px}
+  .timing-ui{width:100%; max-width:400px; height:36px; background:#111; border-radius:8px; border:1px solid rgba(255,255,255,0.04); position:relative; overflow:hidden; margin-top:10px}
+  .timing-bar-pointer{position:absolute; top:0; bottom:0; width:6px; background:var(--accent); transform:translateX(-50%);}
+  .timing-bar-sweet{position:absolute; top:6px; bottom:6px; height:calc(100% - 12px); border-radius:6px; background:rgba(0,255,170,0.18); left:40%; width:20%;}
+  .arena-top{display:flex; gap:12px; width:100%; justify-content:space-between; align-items:center; margin-bottom:6px}
+  .hp{text-align:center}
+  @media (max-width:720px){
+    .arena{max-width:100%}
   }
 </style>
 </head>
 <body>
 <header>
-  <h1>Happy Coin: Crypto War</h1>
+  <h1>Happy Coin: Crypto War — Undertale-style</h1>
   <div class="top-stats">
     <div class="chip">رمز ارز: <strong id="coins">0</strong> 🪙</div>
     <div class="chip">دیتاسنتر: <strong id="dcCount">0</strong></div>
@@ -76,420 +51,635 @@
 </header>
 
 <main>
-  <section class="card boss-visual">
-    <div class="darknode" aria-hidden="true">
-      <div class="aura"></div>
-      <div class="circuit-lines"></div>
-      <div class="eyes"><div class="eye"></div><div class="eye"></div></div>
-      <div class="core"></div>
-    </div>
-    <div class="name-tag">DarkNode</div>
-
-    <div style="width:100%;max-width:980px;margin-top:10px">
-      <div class="hp-row">
-        <div class="hp-text">باس <span id="bossPercent">100%</span></div>
-        <div class="bar-wrap" aria-hidden="true">
-          <div class="bar boss" role="progressbar" aria-valuemin="0" aria-valuemax="100"><i id="bossBar" style="width:100%"></i></div>
-        </div>
-        <div class="hp-text" id="bossHPText">HP: 300</div>
-      </div>
-
-      <div style="height:8px"></div>
-
-      <div class="hp-row">
-        <div class="hp-text">تو <span id="playerPercent">100%</span></div>
-        <div class="bar-wrap" aria-hidden="true">
-          <div class="bar player" role="progressbar" aria-valuemin="0" aria-valuemax="100"><i id="playerBar" style="width:100%"></i></div>
-        </div>
-        <div class="hp-text" id="playerHPText">HP: 100</div>
-      </div>
-    </div>
-
-    <div class="controls" style="margin-top:12px">
-      <button class="btn" id="openStagesBtn">حمله به DarkNode</button>
-      <button class="btn secondary" id="buyDCBtn">خرید دیتاسنتر</button>
-      <button class="btn ghost" id="retreatBtn" style="display:none">فرار</button>
-    </div>
-
-    <div style="margin-top:10px; font-size:0.9rem; color:#cfd8dc; text-align:center;">
-      هر دیتاسنتر: <strong>+25 Max HP</strong> و افزایش دمیج
-    </div>
-  </section>
-
   <section class="card">
-    <div class="row" style="justify-content:space-between;align-items:center">
-      <div class="stats-box small">مرحله فعلی: <strong id="currentStageText">0</strong></div>
-      <div class="stats-box small">وضعیت: <strong id="statusText">آماده</strong></div>
+    <div class="battle-area">
+      <div class="arena" id="arenaContainer" aria-live="polite">
+        <div class="arena-top">
+          <div class="hp">باس: <span id="bossHPText">HP: 300</span></div>
+          <div class="hp">تو: <span id="playerHPText">HP: 100</span></div>
+        </div>
+
+        <!-- canvas for bullets and player -->
+        <canvas id="arenaCanvas" width="720" height="360" style="max-width:100%; width:100%; height:auto;"></canvas>
+
+        <div class="hud">
+          <div class="controls">
+            <button class="btn" id="attackBtn">حمله (شروع مینی‌گیم)</button>
+            <button class="btn secondary" id="actBtn">Act</button>
+            <button class="btn secondary" id="buyDCBtn">خرید دیتاسنتر</button>
+            <button class="btn ghost" id="retreatBtn" style="display:none">فرار</button>
+          </div>
+          <div class="status"><span id="statusText">آماده</span> — مرحله: <strong id="currentStageText">—</strong></div>
+        </div>
+
+        <!-- timing minigame -->
+        <div id="timingUI" class="timing-ui" style="display:none" aria-hidden="true">
+          <div id="sweetZone" class="timing-bar-sweet"></div>
+          <div id="pointer" class="timing-bar-pointer"></div>
+        </div>
+
+      </div>
+
+      <div style="flex:1; max-width:360px;">
+        <div class="card" style="margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>جزئیات باس</div>
+            <div class="small">سختی: <span id="stageDiff">—</span></div>
+          </div>
+          <div style="height:8px"></div>
+          <div class="log" id="log">> خوش آمدی! مرحله‌ای انتخاب کن و بجنگ.</div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div>کنترل‌ها</div>
+            <div class="small">حرکت: فلش‌ها یا درگ / حمله: دکمه یا Space</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn secondary" id="openStagesBtn">انتخاب مرحله</button>
+            <button class="btn secondary" id="resetBtn">ریست ذخیره</button>
+          </div>
+        </div>
+      </div>
     </div>
-    <div style="height:10px"></div>
-    <div class="log" id="log" aria-live="polite">> خوش آمدی! برای شروع، روی «حمله به DarkNode» بزن.</div>
   </section>
 </main>
 
-<div id="stageModal" class="modal" aria-hidden="true">
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="stageTitle">
-    <h3 id="stageTitle" style="margin:0 0 8px 0">انتخاب مرحله (۳۴ مرحله)</h3>
-    <div class="stages" id="stagesGrid" tabindex="0" aria-label="لیست مراحل"></div>
-    <div style="height:10px"></div>
-    <div style="text-align:center"><button class="btn secondary" id="closeModalBtn">بستن</button></div>
+<!-- Stages modal (simple) -->
+<div id="stageModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;padding:18px;z-index:60">
+  <div style="background:linear-gradient(180deg,#0b0b0d,#0f0f11);padding:14px;border-radius:10px;max-width:720px;width:100%;border:1px solid rgba(255,255,255,0.03)">
+    <h3 style="margin:0 0 8px 0">انتخاب مرحله</h3>
+    <div id="stagesGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;max-height:60vh;overflow:auto;padding:6px"></div>
+    <div style="text-align:center;margin-top:8px"><button class="btn secondary" id="closeStageModal">بستن</button></div>
   </div>
 </div>
 
-<footer>
-  <div>نسخه آزمایشی — موبایل و دسکتاپ هماهنگ</div>
+<footer style="width:100%;max-width:1100px;margin-top:12px;text-align:center;color:#cfd8dc">
+  <div>نسخه آزمایشی — نسخه Undertale-like</div>
   <div class="made-by">ساخته شده توسط Rob Lucci</div>
 </footer>
 
 <script>
-/* ===== Helpers ===== */
+/* -------------------- helpers storage & safe log -------------------- */
 function readNumber(key,fallback){
-  try{
-    const v = localStorage.getItem(key);
-    if (v === null) return fallback;
-    const n = Number(v);
-    return isNaN(n) ? fallback : n;
-  }catch(e){
-    return fallback;
-  }
+  try{ const v=localStorage.getItem(key); if(v===null) return fallback; const n=Number(v); return isNaN(n)?fallback:n; }catch(e){return fallback;}
 }
+function saveNumber(key,val){ try{ localStorage.setItem(key,String(val)); }catch(e){} }
 function safeLog(msg){
-  // escape < & > to avoid injecting HTML
+  const el = document.getElementById('log');
   const esc = String(msg).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const logEl = document.getElementById('log');
-  logEl.innerHTML = '> ' + esc + '<br>' + logEl.innerHTML;
+  el.innerHTML = '> ' + esc + '<br>' + el.innerHTML;
 }
-function fmt(n){ return Math.round(n); }
 
-/* ===== Game state ===== */
+/* -------------------- game state -------------------- */
 const TOTAL_STAGES = 34;
-const BASE_PLAYER_MAX_HP = 100;
 let coins = readNumber('hc_coins', 0);
 let dcCount = readNumber('hc_dcCount', 0);
 let dcCost = readNumber('hc_dcCost', 50);
 let unlockedStage = readNumber('hc_unlocked', 1) || 1;
 
+const BASE_PLAYER_MAX_HP = 100;
 let playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
 let playerHP = playerMaxHP;
+
+let currentStage = 0;
 let bossMaxHP = 300;
 let bossHP = bossMaxHP;
-let bossAttackStrength = 8;
-let bossAlive = false;
-let currentStage = 0;
-let bossAttackIntervalId = null;
-let lastAttackType = null;
+let bossAttackBase = 8;
 
-/* ===== DOM refs ===== */
+let bossAlive = false;
+let spawnIntervalId = null;
+let rafId = null;
+let bullets = []; // projectile list
+let pointerX = 0, pointerY = 0;
+let isDragging = false;
+
+/* DOM refs */
 const coinsEl = document.getElementById('coins');
 const dcCountEl = document.getElementById('dcCount');
 const dcCostEl = document.getElementById('dcCost');
-const bossBarEl = document.getElementById('bossBar');
-const playerBarEl = document.getElementById('playerBar');
 const bossHPText = document.getElementById('bossHPText');
 const playerHPText = document.getElementById('playerHPText');
-const bossPercentEl = document.getElementById('bossPercent');
-const playerPercentEl = document.getElementById('playerPercent');
-const logEl = document.getElementById('log');
+const statusText = document.getElementById('statusText');
+const currentStageText = document.getElementById('currentStageText');
+const stageDiffEl = document.getElementById('stageDiff');
+
+const canvas = document.getElementById('arenaCanvas');
+const ctx = canvas.getContext('2d');
+const attackBtn = document.getElementById('attackBtn');
+const buyDCBtn = document.getElementById('buyDCBtn');
+const retreatBtn = document.getElementById('retreatBtn');
 const openStagesBtn = document.getElementById('openStagesBtn');
 const stageModal = document.getElementById('stageModal');
 const stagesGrid = document.getElementById('stagesGrid');
-const closeModalBtn = document.getElementById('closeModalBtn');
-const buyDCBtn = document.getElementById('buyDCBtn');
-const retreatBtn = document.getElementById('retreatBtn');
-const currentStageText = document.getElementById('currentStageText');
-const statusText = document.getElementById('statusText');
+const closeStageModal = document.getElementById('closeStageModal');
+const timingUI = document.getElementById('timingUI');
+const pointerEl = document.getElementById('pointer');
+const sweetZoneEl = document.getElementById('sweetZone');
+const attackSpaceHint = document.getElementById('attackBtn');
+const resetBtn = document.getElementById('resetBtn');
 
-/* ===== Save / UI ===== */
-function saveData(){
-  try{
-    localStorage.setItem('hc_coins', String(coins));
-    localStorage.setItem('hc_dcCount', String(dcCount));
-    localStorage.setItem('hc_dcCost', String(dcCost));
-    localStorage.setItem('hc_unlocked', String(unlockedStage));
-  }catch(e){
-    console.warn('localStorage error', e);
+/* player (heart) representation */
+let player = {
+  x: 120,
+  y: canvas.height / 2,
+  size: 18,
+  speed: 300 // px/sec
+};
+
+/* difficulty formulas */
+function damageMultiplier(){ return 1 + dcCount * 0.35; }
+function computeBossHPForStage(stage){ return Math.round(300 * Math.pow(1.5, stage-1)); }
+function computeBossAttackBase(stage){ return Math.round(8 * Math.pow(1.22, stage-1)); }
+
+/* -------------------- UI helpers -------------------- */
+function updateUI(){
+  coinsEl.innerText = Math.round(coins);
+  dcCountEl.innerText = dcCount;
+  dcCostEl.innerText = Math.round(dcCost);
+  bossHPText.innerText = 'HP: ' + Math.max(0,Math.round(bossHP)) + ' / ' + Math.round(bossMaxHP);
+  playerHPText.innerText = 'HP: ' + Math.max(0,Math.round(playerHP)) + ' / ' + Math.round(playerMaxHP);
+  currentStageText.innerText = currentStage ? currentStage : '—';
+  saveNumber('hc_coins', coins);
+  saveNumber('hc_dcCount', dcCount);
+  saveNumber('hc_dcCost', dcCost);
+  saveNumber('hc_unlocked', unlockedStage);
+}
+
+/* -------------------- projectiles & physics -------------------- */
+function spawnBulletAt(angle, speed, size=8, color='rgba(255,80,80,0.95)'){
+  // spawn from boss area (right side) aiming toward a direction
+  const spawnX = canvas.width - 60;
+  const spawnY = canvas.height / 2;
+  bullets.push({
+    x: spawnX,
+    y: spawnY,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    r: size,
+    color
+  });
+}
+
+function spawnAimedBulletTowardsPlayer(speed, spread=0){
+  const sx = canvas.width - 60;
+  const sy = canvas.height / 2;
+  const dx = player.x - sx;
+  const dy = player.y - sy;
+  const baseAngle = Math.atan2(dy,dx);
+  const angle = baseAngle + (Math.random()*2-1) * spread;
+  spawnBulletAt(angle, speed);
+}
+
+/* clear bullets offscreen */
+function cleanupBullets(){
+  bullets = bullets.filter(b => b.x + b.r > -50 && b.x - b.r < canvas.width + 50 && b.y + b.r > -50 && b.y - b.r < canvas.height + 50);
+}
+
+/* collision circle-rect simple */
+function rectCircleColliding(circle, rect){
+  // rect = {x,y,w,h} where rect.x,rect.y is top-left
+  const distX = Math.abs(circle.x - (rect.x + rect.w/2));
+  const distY = Math.abs(circle.y - (rect.y + rect.h/2));
+  if (distX > (rect.w/2 + circle.r)) return false;
+  if (distY > (rect.h/2 + circle.r)) return false;
+  if (distX <= (rect.w/2)) return true;
+  if (distY <= (rect.h/2)) return true;
+  const dx = distX - rect.w/2;
+  const dy = distY - rect.h/2;
+  return (dx*dx + dy*dy <= (circle.r*circle.r));
+}
+
+/* -------------------- animation & loop -------------------- */
+let lastFrame = performance.now();
+function rafLoop(now){
+  const dt = (now - lastFrame) / 1000;
+  lastFrame = now;
+  updatePhysics(dt);
+  render();
+  rafId = requestAnimationFrame(rafLoop);
+}
+
+function updatePhysics(dt){
+  // move bullets
+  for(const b of bullets){
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+  }
+  cleanupBullets();
+
+  // collisions: bullets vs player
+  const playerRect = { x: player.x - player.size/2, y: player.y - player.size/2, w: player.size, h: player.size };
+  for (let i = bullets.length - 1; i >= 0; i--){
+    if (rectCircleColliding(bullets[i], playerRect)){
+      // collide
+      const dmg = Math.max(1, Math.round(6 + Math.random()*6));
+      playerHP -= dmg;
+      safeLog('حمله برخورد کرد — ' + dmg + ' دمیج');
+      bullets.splice(i,1);
+      if (playerHP <= 0){
+        playerHP = 0;
+        updateUI();
+        endFight(false);
+        return;
+      }
+      updateUI();
+    }
   }
 }
 
-function recalcPlayerHPFromDC(){
+function render(){
+  // clear
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // draw boss area on right
+  const bossX = canvas.width - 60, bossY = canvas.height/2;
+  // boss "core"
+  ctx.beginPath();
+  ctx.fillStyle = 'rgba(125,0,178,0.12)';
+  ctx.arc(bossX, bossY, 36, 0, Math.PI*2);
+  ctx.fill();
+  ctx.closePath();
+  // boss eyes
+  ctx.beginPath();
+  ctx.fillStyle = '#ff6b6b';
+  ctx.arc(bossX - 12, bossY - 8, 6, 0, Math.PI*2);
+  ctx.arc(bossX + 12, bossY - 8, 6, 0, Math.PI*2);
+  ctx.fill();
+  ctx.closePath();
+
+  // bullets
+  for(const b of bullets){
+    ctx.beginPath();
+    ctx.fillStyle = b.color;
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+    ctx.fill();
+    ctx.closePath();
+  }
+
+  // player (heart-like square)
+  ctx.save();
+  ctx.translate(player.x, player.y);
+  ctx.rotate(Math.sin(performance.now()/200)*0.05);
+  ctx.fillStyle = '#ffd59a';
+  const s = player.size;
+  ctx.fillRect(-s/2, -s/2, s, s);
+  ctx.restore();
+}
+
+/* -------------------- boss attack patterns -------------------- */
+function startSpawningBullets(stage){
+  stopSpawningBullets();
+  const baseSpeed = 120 + (stage-1)*18; // px/sec
+  const spawnInterval = Math.max(420, 900 - (stage-1)*18); // ms
+  spawnIntervalId = setInterval(()=>{
+    if (!bossAlive) return;
+    // choose pattern:
+    const r = Math.random();
+    if (r < 0.45){
+      // aimed bullet(s)
+      spawnAimedBulletTowardsPlayer(baseSpeed * (0.9 + Math.random()*0.4), 0.18);
+    } else if (r < 0.75){
+      // spread volley
+      const bulletsCount = 4;
+      const centerAngle = Math.atan2(player.y - canvas.height/2, player.x - (canvas.width - 60));
+      for(let i=0;i<bulletsCount;i++){
+        const angle = centerAngle + (i - (bulletsCount-1)/2) * 0.22;
+        spawnBulletAt(angle, baseSpeed * 0.9 + i*8, 7);
+      }
+    } else {
+      // quick wave from top or bottom across
+      const fromTop = Math.random() < 0.5;
+      const y = fromTop ? 40 : canvas.height - 40;
+      const sx = canvas.width - 60;
+      const dx = -1.0; // left
+      const angle = Math.atan2((canvas.height/2) - y, dx);
+      for(let i=0;i<6;i++){
+        bullets.push({
+          x: sx + i*6,
+          y: y + i*10,
+          vx: - (baseSpeed + i*6) * 0.9,
+          vy: (fromTop ? 1 : -1) * (20 + i*6) * 0.04,
+          r: 6,
+          color: 'rgba(255,120,60,0.95)'
+        });
+      }
+    }
+  }, spawnInterval);
+}
+
+function stopSpawningBullets(){
+  if (spawnIntervalId){ clearInterval(spawnIntervalId); spawnIntervalId = null; }
+}
+
+/* -------------------- fight flow -------------------- */
+function startStage(stage){
+  if (bossAlive) { safeLog('در حال مبارزه‌ای — اول تمومش کن یا فرار کن.'); return; }
+  currentStage = stage;
+  bossMaxHP = computeBossHPForStage(stage);
+  bossHP = bossMaxHP;
+  bossAttackBase = computeBossAttackBase(stage);
+  // recalc player
   playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
-  if (playerHP > playerMaxHP) playerHP = playerMaxHP;
+  playerHP = playerMaxHP;
+  bossAlive = true;
+  bullets = [];
+  safeLog('مرحله '+stage+' شروع شد — باس HP: ' + bossMaxHP);
+  statusText.innerText = 'مبارزه (مرحله '+stage+')';
+  retreatBtn.style.display = 'inline-block';
+  startSpawningBullets(stage);
+  if (!rafId){ lastFrame = performance.now(); rafId = requestAnimationFrame(rafLoop); }
+  updateUI();
 }
 
-function updateUI(){
-  recalcPlayerHPFromDC();
-  coinsEl.innerText = fmt(coins);
-  dcCountEl.innerText = dcCount;
-  dcCostEl.innerText = fmt(dcCost);
-
-  const bossPct = bossMaxHP ? Math.max(0, Math.round((bossHP / bossMaxHP) * 100)) : 0;
-  const playerPct = playerMaxHP ? Math.max(0, Math.round((playerHP / playerMaxHP) * 100)) : 0;
-
-  bossBarEl.style.width = bossPct + '%';
-  playerBarEl.style.width = playerPct + '%';
-  bossHPText.innerText = 'HP: ' + fmt(Math.max(0,bossHP)) + ' / ' + fmt(bossMaxHP);
-  playerHPText.innerText = 'HP: ' + fmt(Math.max(0,playerHP)) + ' / ' + fmt(playerMaxHP);
-  bossPercentEl.innerText = bossPct + '%';
-  playerPercentEl.innerText = playerPct + '%';
-  currentStageText.innerText = currentStage ? currentStage : '—';
-
-  // accessibility: update aria value
-  const bossBarParent = bossBarEl.parentElement;
-  const playerBarParent = playerBarEl.parentElement;
-  if (bossBarParent) bossBarParent.setAttribute('aria-valuenow', String(bossPct));
-  if (playerBarParent) playerBarParent.setAttribute('aria-valuenow', String(playerPct));
-
-  saveData();
+function endFight(victory){
+  bossAlive = false;
+  stopSpawningBullets();
+  if (spawnIntervalId){ clearInterval(spawnIntervalId); spawnIntervalId = null; }
+  if (rafId){ cancelAnimationFrame(rafId); rafId = null; }
+  bullets = [];
+  retreatBtn.style.display = 'none';
+  timingUI.style.display = 'none';
+  timingUI.setAttribute('aria-hidden','true');
+  hideTouchDrag();
+  if (victory){
+    const reward = Math.round(100 * Math.max(1,currentStage) * (1 + dcCount*0.08));
+    coins += reward;
+    safeLog('تبریک! باس شکست خورد — +' + reward + ' سکه');
+    // unlock next
+    if (currentStage < TOTAL_STAGES && unlockedStage <= currentStage) unlockedStage = currentStage + 1;
+    playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
+    playerHP = playerMaxHP;
+    statusText.innerText = 'برنده شدی!';
+  } else {
+    const loss = Math.min(coins, Math.round(10 * Math.max(1,currentStage)));
+    coins -= loss;
+    safeLog('شکست خوردی — از دست دادی ' + loss + ' سکه');
+    playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
+    playerHP = Math.max(1, Math.round(playerMaxHP * 0.3));
+    statusText.innerText = 'شکست خوردی';
+  }
+  currentStage = 0;
+  updateUI();
 }
 
-/* ===== Formulas & balance ===== */
-function computeBossHPForStage(stage){
-  return Math.round(300 * Math.pow(1.5, stage-1));
-}
-function computeBossAttackForStage(stage){
-  return Math.round(8 * Math.pow(1.22, stage-1));
-}
-// each DC now adds 35% damage (less oppressive than 60%)
-function damageMultiplier(){ return 1 + dcCount * 0.35; }
+/* retreat */
+retreatBtn.addEventListener('click', ()=>{
+  if (!bossAlive) return;
+  safeLog('فرار کردی از مبارزه.');
+  endFight(false);
+});
 
-/* ===== Stage grid builder ===== */
+/* -------------------- attack minigame (timing) -------------------- */
+let timing = {
+  running: false,
+  dir: 1,
+  pos: 0, // 0..1
+  speed: 1.6, // cycles per second across the bar
+  sweetLeft: 0.35, sweetWidth: 0.25 // percent range of sweet spot (can be modified by dcCount)
+};
+
+function startTimingMinigame(){
+  if (!bossAlive) { safeLog('الان باس نیست.'); return; }
+  if (timing.running) return;
+  // adjust sweet zone by dcCount? make easier slightly with DC
+  const baseWidth = 0.18;
+  timing.sweetWidth = Math.min(0.45, baseWidth + dcCount * 0.02);
+  timing.sweetLeft = 0.25 + (Math.random() * 0.5 - 0.15);
+  timing.pos = 0;
+  timing.dir = 1;
+  timing.running = true;
+  timing.startTime = performance.now();
+  timingUI.style.display = 'block';
+  timingUI.setAttribute('aria-hidden','false');
+  // pause spawning for short moment so player can focus
+  const hadSpawn = !!spawnIntervalId;
+  if (spawnIntervalId){ stopSpawningBullets(); }
+  // animate pointer
+  function step(){
+    if (!timing.running) return;
+    const now = performance.now();
+    const elapsed = (now - timing.startTime) / 1000;
+    // pos oscillates 0..1..0 using sin
+    timing.pos = (Math.sin(elapsed * Math.PI * timing.speed - Math.PI/2) + 1) / 2;
+    // update pointer position DOM
+    const parentWidth = timingUI.clientWidth;
+    const px = timing.pos * parentWidth;
+    pointerEl.style.left = px + 'px';
+    // stop automatically if 3.2s passed
+    if (elapsed > 3.2){
+      // auto-fail (weak hit)
+      finishTiming(false);
+      if (hadSpawn) startSpawningBullets(currentStage);
+      return;
+    }
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+
+  // helper to finish
+  function finishTiming(userPressed){
+    if (!timing.running) return;
+    timing.running = false;
+    timingUI.style.display = 'none';
+    timingUI.setAttribute('aria-hidden','true');
+
+    // compute hit quality
+    const winPos = timing.pos;
+    const left = timing.sweetLeft;
+    const right = timing.sweetLeft + timing.sweetWidth;
+    let quality = 0; // 0 fail, 1 ok, 2 great, 3 perfect
+    if (winPos >= left && winPos <= right){
+      // how close to center
+      const center = (left + right)/2;
+      const dist = Math.abs(winPos - center) / (timing.sweetWidth/2); // 0..1
+      if (dist < 0.18) quality = 3;
+      else if (dist < 0.45) quality = 2;
+      else quality = 1;
+    } else {
+      quality = 0;
+    }
+
+    // damage mapping
+    let baseDamage;
+    if (quality === 3) baseDamage = Math.round(45 + Math.random()*12);
+    else if (quality === 2) baseDamage = Math.round(28 + Math.random()*10);
+    else if (quality === 1) baseDamage = Math.round(16 + Math.random()*8);
+    else baseDamage = Math.round(6 + Math.random()*6);
+
+    const dmg = Math.round(baseDamage * damageMultiplier());
+    bossHP -= dmg;
+    const reward = Math.round(8 * Math.max(1,currentStage) * (1 + quality*0.25));
+    coins += reward;
+
+    safeLog('تو حمله زدی — کیفیت: ' + (['Fail','OK','Great','Perfect'][quality]) + ' | ' + dmg + ' دمیج — +' + reward + ' سکه');
+    updateUI();
+
+    // resume spawn after short delay if it was paused
+    setTimeout(()=>{ if (hadSpawn && bossAlive) startSpawningBullets(currentStage); }, 300);
+
+    // if boss died by this hit
+    if (bossHP <= 0){
+      bossHP = 0;
+      updateUI();
+      endFight(true);
+    }
+  }
+
+  // attach a one-time keypress for space/enter or attackBtn click
+  function onKey(e){
+    if (!timing.running) return;
+    if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter'){
+      finishTiming(true);
+      window.removeEventListener('keydown', onKey);
+    }
+  }
+  window.addEventListener('keydown', onKey);
+  // also attach attackBtn click to confirm
+  const clickHandler = ()=>{ finishTiming(true); attackBtn.removeEventListener('click', clickHandler); };
+  attackBtn.addEventListener('click', clickHandler);
+}
+
+/* -------------------- input: keyboard & touch drag -------------------- */
+const keys = {};
+window.addEventListener('keydown', (e)=>{ keys[e.key] = true; if (timing.running && (e.key===' '||e.key==='Enter')) { /* handled in timing */ }});
+window.addEventListener('keyup', (e)=>{ keys[e.key] = false; });
+
+let lastMoveTime = performance.now();
+function handlePlayerMovement(){
+  const now = performance.now();
+  const dt = (now - lastMoveTime) / 1000;
+  lastMoveTime = now;
+  let dx = 0, dy = 0;
+  if (keys['ArrowLeft'] || keys['a'] || keys['A']) dx -= 1;
+  if (keys['ArrowRight'] || keys['d'] || keys['D']) dx += 1;
+  if (keys['ArrowUp'] || keys['w'] || keys['W']) dy -= 1;
+  if (keys['ArrowDown'] || keys['s'] || keys['S']) dy += 1;
+  const len = Math.hypot(dx,dy);
+  if (len > 0){
+    dx /= len; dy /= len;
+    player.x += dx * player.speed * dt;
+    player.y += dy * player.speed * dt;
+    clampPlayerToCanvas();
+  }
+  requestAnimationFrame(handlePlayerMovement);
+}
+function clampPlayerToCanvas(){
+  const margin = 6;
+  player.x = Math.max(margin, Math.min(canvas.width - margin - 160, player.x)); // keep player away from boss area on right
+  player.y = Math.max(margin, Math.min(canvas.height - margin, player.y));
+}
+
+/* touch drag */
+let touchActive = false;
+function setupTouchDrag(){
+  function onStart(e){
+    touchActive = true;
+    isDragging = true;
+    moveFromEvent(e);
+  }
+  function onMove(e){
+    if (!touchActive) return;
+    moveFromEvent(e);
+  }
+  function onEnd(e){
+    touchActive = false;
+    isDragging = false;
+  }
+  function moveFromEvent(e){
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : null);
+    const clientX = touch ? touch.clientX : (e.clientX);
+    const clientY = touch ? touch.clientY : (e.clientY);
+    if (!clientX) return;
+    const x = (clientX - rect.left) * (canvas.width / rect.width);
+    const y = (clientY - rect.top) * (canvas.height / rect.height);
+    player.x = x; player.y = y;
+    clampPlayerToCanvas();
+  }
+  canvas.addEventListener('touchstart', onStart, {passive:false});
+  canvas.addEventListener('touchmove', onMove, {passive:false});
+  canvas.addEventListener('touchend', onEnd, {passive:false});
+  canvas.addEventListener('mousedown', onStart);
+  window.addEventListener('mousemove', (e)=>{ if (isDragging) moveFromEvent(e); });
+  window.addEventListener('mouseup', ()=>{ isDragging=false; touchActive=false; });
+}
+function hideTouchDrag(){
+  // nothing to remove (listeners are harmless). we keep them.
+}
+
+/* -------------------- buy data center & balance -------------------- */
+function buyDataCenter(){
+  if (coins < dcCost){ safeLog('سکه کافی نداری'); return; }
+  coins -= dcCost; dcCount += 1;
+  dcCost = Math.min(999999999, Math.round(dcCost * 1.6));
+  // increase max HP
+  const oldMax = playerMaxHP;
+  playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
+  const hpIncrease = playerMaxHP - oldMax;
+  // restore a portion of the gained HP to current HP to give satisfying feel (70%)
+  playerHP = Math.min(playerMaxHP, playerHP + Math.round(hpIncrease * 0.7));
+  safeLog('دیتاسنتر خریدی — +25 Max HP و HP فعلی افزایش یافت');
+  updateUI();
+}
+
+/* -------------------- stages grid -------------------- */
 function buildStages(){
   stagesGrid.innerHTML = '';
-  for (let s=1; s<=TOTAL_STAGES; s++){
+  for(let s=1;s<=TOTAL_STAGES;s++){
     const div = document.createElement('div');
-    div.className = 'stage' + (s > unlockedStage ? ' locked' : '');
-    div.innerHTML = '<div class="num">مرحله ' + s + '</div><div class="diff">' + (s<=4?'آسان':s<=12?'متوسط':s<=24?'سخت':'نهایی') + '</div>';
+    div.style.padding = '10px';
+    div.style.borderRadius = '8px';
+    div.style.background = (s <= unlockedStage) ? '#101014' : '#0b0b0d';
+    div.style.border = '1px solid rgba(255,255,255,0.03)';
+    div.style.cursor = (s <= unlockedStage) ? 'pointer' : 'not-allowed';
+    div.innerHTML = '<div style="font-weight:800;color:var(--accent)">مرحله '+s+'</div><div style="font-size:0.85rem;margin-top:6px">'+(s<=4?'آسان':s<=12?'متوسط':s<=24?'سخت':'نهایی')+'</div>';
     if (s <= unlockedStage){
-      div.addEventListener('click', ()=> { startStage(s); closeStageModal(); });
-      div.style.cursor = 'pointer';
+      div.addEventListener('click', ()=>{ startStage(s); closeModal(); });
     } else {
-      // locked: no click, but add hint on hover for desktop (pointer-events none prevents clicking)
-      div.title = 'این مرحله قفل است. مراحل قبلی را کامل کن یا دیتاسنتر بخر.';
+      div.title = 'این مرحله قفل است';
     }
     stagesGrid.appendChild(div);
   }
 }
+function openModal(){ stageModal.style.display = 'flex'; }
+function closeModal(){ stageModal.style.display = 'none'; }
 
-/* ===== Modal controls ===== */
-function openStageModal(){
-  buildStages();
-  stageModal.classList.add('show');
-  stageModal.setAttribute('aria-hidden','false');
-  // focus first unlocked stage for keyboard users
-  setTimeout(()=>{ stagesGrid.focus(); }, 80);
-}
-function closeStageModal(){
-  stageModal.classList.remove('show');
-  stageModal.setAttribute('aria-hidden','true');
-}
-
-/* ===== Fight control UI (create/destroy) ===== */
-function showFightControls(){
-  if (document.getElementById('fightControls')) return;
-  const cont = document.createElement('div');
-  cont.id = 'fightControls';
-  cont.style.position = 'fixed';
-  cont.style.left = '50%';
-  cont.style.transform = 'translateX(-50%)';
-  cont.style.bottom = '14px';
-  cont.style.zIndex = 50;
-  cont.style.display = 'flex';
-  cont.style.gap = '10px';
-  cont.style.padding = '6px';
-  cont.style.background = 'linear-gradient(180deg, rgba(10,10,12,0.9), rgba(8,8,10,0.85))';
-  cont.style.borderRadius = '10px';
-  cont.style.boxShadow = '0 6px 20px rgba(0,0,0,0.6)';
-  cont.innerHTML = '<button class="btn" id="meleeBtnMobile">حمله تن به تن</button><button class="btn secondary" id="rangedBtnMobile">حمله کریپتو</button>';
-  document.body.appendChild(cont);
-  document.getElementById('meleeBtnMobile').addEventListener('click', ()=>playerAttack('melee'));
-  document.getElementById('rangedBtnMobile').addEventListener('click', ()=>playerAttack('ranged'));
-}
-function hideFightControls(){ const e=document.getElementById('fightControls'); if(e) e.remove(); }
-
-/* ===== Boss loop ===== */
-function startBossLoop(stage){
-  if (bossAttackIntervalId){ clearInterval(bossAttackIntervalId); bossAttackIntervalId = null; }
-  const interval = Math.max(500, 1400 - (stage-1) * 30); // faster with higher stage
-  bossAttackIntervalId = setInterval(()=>{
-    if (!bossAlive) return;
-    const base = computeBossAttackForStage(stage);
-    const multiplier = (lastAttackType === 'melee') ? 1.45 : 1.0;
-    const dmg = Math.max(1, Math.round(base * multiplier * (0.9 + Math.random()*0.35)));
-    playerHP -= dmg;
-    safeLog('DarkNode حمله کرد و ' + dmg + ' دمیج زد! (مرحله '+stage+')');
-    if (playerHP <= 0){
-      playerHP = 0;
-      updateUI();
-      endFight(false);
-    } else {
-      updateUI();
-    }
-  }, interval);
-}
-
-/* ===== Player actions ===== */
-function playerAttack(type){
-  if (!bossAlive){ safeLog('الان باس نیست، مرحله انتخاب کن.'); return; }
-  lastAttackType = type;
-  let base;
-  if (type === 'melee'){
-    base = Math.floor(Math.random()*18) + 12;
-  } else {
-    base = Math.floor(Math.random()*12) + 6;
-  }
-  const dmg = Math.round(base * damageMultiplier());
-  bossHP -= dmg;
-  const reward = Math.round(6 * Math.max(1,currentStage) * (type==='melee' ? 1 : 1.1)); // slightly lower per-hit reward
-  coins += reward;
-  safeLog('تو زدی ('+ (type==='melee'?'تن به تن':'کریپتو') +') و ' + dmg + ' دمیج وارد کردی — +' + reward + ' سکه');
-  if (type === 'melee'){
-    // small burst heal to boss (stagger mechanic) but limited
-    const buff = Math.round(bossMaxHP * 0.01);
-    bossHP = Math.min(bossHP + buff, bossMaxHP + buff);
-    safeLog('حالت تن به تن! باس برای لحظه‌ای کمی قوی‌تر شد.');
-  }
-  updateUI();
-  if (bossHP <= 0){
-    bossHP = 0;
-    updateUI();
-    endFight(true);
-  }
-}
-
-/* ===== End / Retreat ===== */
-function endFight(victory){
-  bossAlive = false;
-  statusText.innerText = victory ? 'برنده شدی!' : 'شکست خوردی';
-  if (bossAttackIntervalId){ clearInterval(bossAttackIntervalId); bossAttackIntervalId = null; }
-  retreatBtn.style.display = 'none';
-  hideFightControls();
-
-  if (victory){
-    // reward scales but less explosive
-    const baseReward = Math.round(90 * Math.max(1,currentStage) * (1 + dcCount*0.08));
-    coins += baseReward;
-    recalcPlayerHPFromDC();
-    playerHP = playerMaxHP;
-    safeLog('تبریک! باس شکست خورد. دریافتی: +' + baseReward + ' سکه');
-    safeLog('جان تو پس از پیروزی کامل بازیابی شد.');
-    if (currentStage < TOTAL_STAGES && unlockedStage <= currentStage){
-      unlockedStage = currentStage + 1;
-      try{ localStorage.setItem('hc_unlocked', String(unlockedStage)); }catch(e){}
-      safeLog('مرحله بعد باز شد: ' + unlockedStage);
-    }
-  } else {
-    // loss should be fairer: 10 * stage, capped by coins
-    const loss = Math.min(coins, Math.round(10 * Math.max(1,currentStage)));
-    coins -= loss;
-    safeLog('شکست خوردی... از دست دادی ' + loss + ' سکه');
-    // small heal after defeat but not full
-    recalcPlayerHPFromDC();
-    playerHP = Math.max(1, Math.round(playerMaxHP * 0.35));
-  }
-  currentStage = 0;
-  updateUI();
-}
-
-/* Retreat button */
-retreatBtn.addEventListener('click', ()=>{
-  if (!bossAlive) return;
-  bossAlive = false;
-  if (bossAttackIntervalId){ clearInterval(bossAttackIntervalId); bossAttackIntervalId = null; }
-  safeLog('فرار کردی از مبارزه. سکه‌هاتو نگه دار!');
-  statusText.innerText = 'آماده';
-  retreatBtn.style.display = 'none';
-  hideFightControls();
-  currentStage = 0;
-  updateUI();
-});
-
-/* ===== Buy Data Center ===== */
-function buyDataCenter(){
-  if (coins < dcCost){
-    safeLog('رمز ارز کافی نداری برای خرید دیتاسنتر.');
-    return;
-  }
-  coins -= dcCost;
-  dcCount += 1;
-  // gentler price growth
-  dcCost = Math.min(999999999, Math.round(dcCost * 1.6));
-  // recalc and heal a bit
-  recalcPlayerHPFromDC();
-  playerHP = playerMaxHP;
-  safeLog('دیتاسنتر خریدی — +25 Max HP و قدرت دمیج افزایش پیدا کرد! (×' + damageMultiplier().toFixed(2) + ')');
-  updateUI();
-}
-
-/* ===== Start Stage ===== */
-function startStage(stage){
-  if (bossAlive){ safeLog('الان در حال مبارزه‌ای — اول تمومش کن یا فرار کن.'); return; }
-  currentStage = stage;
-  bossMaxHP = computeBossHPForStage(stage);
-  bossHP = bossMaxHP;
-  bossAttackStrength = computeBossAttackForStage(stage);
-  recalcPlayerHPFromDC();
-  playerHP = playerMaxHP;
-  bossAlive = true;
-  statusText.innerText = 'در حال مبارزه (مرحله '+stage+')';
-  safeLog('مرحله '+stage+' شروع شد! باس HP: '+bossMaxHP+' | حملهٔ باس: '+bossAttackStrength);
-  retreatBtn.style.display = 'inline-block';
-  showFightControls();
-  startBossLoop(stage);
-  updateUI();
-}
-
-/* ===== Keyboard shortcuts ===== */
-document.addEventListener('keydown', (e)=>{
-  if (!bossAlive) return;
-  if (e.key === 'z' || e.key === 'Z') playerAttack('melee');
-  if (e.key === 'x' || e.key === 'X') playerAttack('ranged');
-});
-
-/* ===== Desktop quick attack buttons (created once) ===== */
-document.addEventListener('DOMContentLoaded', ()=>{
-  const attackBar = document.createElement('div');
-  attackBar.style.marginTop = '10px';
-  attackBar.style.display = 'flex';
-  attackBar.style.gap = '8px';
-  attackBar.innerHTML = '<button class="btn" id="meleeBtn">حمله تن به تن (M)</button><button class="btn" id="rangedBtn">حمله کریپتو (X)</button>';
-  document.querySelector('main').insertBefore(attackBar, document.querySelector('.card:last-of-type'));
-
-  // desktop buttons behaviour: if no boss -> open stage modal; if boss -> attack
-  document.getElementById('meleeBtn').addEventListener('click', ()=>{
-    if(!bossAlive){ openStageModal(); } else playerAttack('melee');
-  });
-  document.getElementById('rangedBtn').addEventListener('click', ()=>{
-    if(!bossAlive){ openStageModal(); } else playerAttack('ranged');
-  });
-
-  buildStages();
-  updateUI();
-});
-
-/* ===== Modal buttons ===== */
-openStagesBtn.addEventListener('click', openStageModal);
-closeModalBtn.addEventListener('click', closeStageModal);
-
-/* ===== Buy DC bind ===== */
+/* -------------------- events -------------------- */
+openStagesBtn.addEventListener('click', ()=>{ buildStages(); openModal(); });
+closeStageModal.addEventListener('click', closeModal);
+attackBtn.addEventListener('click', ()=>{ if (!timing.running) startTimingMinigame(); });
 buyDCBtn.addEventListener('click', buyDataCenter);
+resetBtn.addEventListener('click', ()=>{ if(confirm('میخوای ذخیره رو ریست کنی؟')){ localStorage.clear(); location.reload(); } });
 
-/* ===== Cleanup on unload ===== */
-window.addEventListener('beforeunload', ()=>{
-  if (bossAttackIntervalId) clearInterval(bossAttackIntervalId);
-});
+/* init */
+function init(){
+  // canvas scaling for high-DPI
+  function resizeCanvas(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(320, Math.floor(rect.width * dpr));
+    canvas.height = Math.max(180, Math.floor(rect.height * dpr * 0.5 + 180)); // keep decent aspect
+    // ensure player inside
+    clampPlayerToCanvas();
+  }
+  // call resize once after layout
+  setTimeout(()=>{ resizeCanvas(); player.x = 120; player.y = canvas.height/2; updateUI(); render(); }, 50);
+  window.addEventListener('resize', ()=>{ resizeCanvas(); });
 
-/* ===== Debug helper exposed for console (safe) ===== */
-window.__hc = {
-  buyDataCenter,
-  playerAttack,
-  startStage,
-  computeBossHPForStage,
-  computeBossAttackForStage,
-  getState: ()=>({coins,dcCount,dcCost,unlockedStage,playerMaxHP,playerHP,bossHP,currentStage})
-};
+  setupTouchDrag();
+  handlePlayerMovement(); // starts RAF for movement handler
+  updateUI();
+  safeLog('سیستم مبارزه Undertale-style آماده است — مرحله رو انتخاب کن و بجنگ!');
+}
 
-/* ===== Initial log entry ===== */
-safeLog('بازی بارگذاری شد. موفق باشی، قهرمان!');
+// end fight on page unload
+window.addEventListener('beforeunload', ()=>{ stopSpawningBullets(); if (rafId) cancelAnimationFrame(rafId); });
 
+/* expose debug */
+window.__hc = { startStage, buyDataCenter, getState: ()=>({coins,dcCount,dcCost,unlockedStage,playerHP,playerMaxHP,bossHP,currentStage}) };
+
+init();
 </script>
 </body>
 </html>
