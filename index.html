@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Happy Coin — Undertale-style Combat (SFX)</title>
+<title>Happy Coin — Boss Attacks (Advanced)</title>
 <style>
   :root{
     --bg1:#070709; --bg2:#121217; --accent:#00ffea; --danger:#ff004c; --purple:#7d00b2;
@@ -36,6 +36,7 @@
   .timing-bar-sweet{position:absolute; top:6px; bottom:6px; height:calc(100% - 12px); border-radius:6px; background:rgba(0,255,170,0.18); left:40%; width:20%;}
   .arena-top{display:flex; gap:12px; width:100%; justify-content:space-between; align-items:center; margin-bottom:6px}
   .hp{text-align:center}
+  .boss-warning{position:absolute; left:50%; transform:translateX(-50%); top:10px; padding:8px 12px; background:rgba(255,0,70,0.14); border-radius:8px; border:1px solid rgba(255,0,70,0.2); color:#ffd0d9; display:none; z-index:30}
   @media (max-width:720px){
     .arena{max-width:100%}
   }
@@ -43,7 +44,7 @@
 </head>
 <body>
 <header>
-  <h1>Happy Coin: Crypto War — SFX</h1>
+  <h1>Happy Coin: Boss Attack — Advanced</h1>
   <div class="top-stats">
     <div class="chip">رمز ارز: <strong id="coins">0</strong> 🪙</div>
     <div class="chip">دیتاسنتر: <strong id="dcCount">0</strong></div>
@@ -54,7 +55,8 @@
 <main>
   <section class="card">
     <div class="battle-area">
-      <div class="arena" id="arenaContainer" aria-live="polite">
+      <div class="arena" id="arenaContainer" aria-live="polite" style="position:relative">
+        <div class="boss-warning" id="bossWarning">!حمله ویژه در راه است — جاخالی بده</div>
         <div class="arena-top">
           <div class="hp">باس: <span id="bossHPText">HP: 300</span></div>
           <div class="hp">تو: <span id="playerHPText">HP: 100</span></div>
@@ -85,7 +87,7 @@
         <div class="card" style="margin-bottom:12px;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div>جزئیات باس</div>
-            <div class="small">سختی: <span id="stageDiff">—</span></div>
+            <div class="small">فاز: <span id="bossPhaseText">1</span></div>
           </div>
           <div style="height:8px"></div>
           <div class="log" id="log">> خوش آمدی! مرحله‌ای انتخاب کن و بجنگ.</div>
@@ -116,36 +118,22 @@
 </div>
 
 <footer style="width:100%;max-width:1100px;margin-top:12px;text-align:center;color:#cfd8dc">
-  <div>نسخه آزمایشی — نسخه Undertale-like + SFX</div>
+  <div>نسخه آزمایشی — Advanced Boss Patterns</div>
   <div class="made-by">ساخته شده توسط Rob Lucci</div>
 </footer>
 
 <script>
 /* ================= Audio (Web Audio API SFX) ================= */
 let audioCtx = null;
-let audioReady = false;
-
 function initAudioContext(){
   if (audioCtx) return;
-  try{
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    audioReady = true;
-  }catch(e){
-    console.warn('AudioContext not supported', e);
-    audioReady = false;
-  }
+  try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ audioCtx = null; }
 }
-
-// ensure resume on user gesture (some browsers keep it suspended)
 function ensureAudioResume(){
   if (!audioCtx) initAudioContext();
   if (!audioCtx) return;
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume().then(()=>{ /* resumed */ }).catch(()=>{});
-  }
+  if (audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
 }
-
-// helper to create short beep with envelope
 function playBeep(freq, duration=0.12, type='sine', volume=0.12){
   if (!audioCtx) initAudioContext();
   if (!audioCtx) return;
@@ -155,65 +143,25 @@ function playBeep(freq, duration=0.12, type='sine', volume=0.12){
   o.type = type;
   o.frequency.value = freq;
   g.gain.value = volume;
-  o.connect(g);
-  g.connect(audioCtx.destination);
+  o.connect(g); g.connect(audioCtx.destination);
   g.gain.setValueAtTime(volume, now);
   g.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-  o.start(now);
-  o.stop(now + duration + 0.02);
+  o.start(now); o.stop(now + duration + 0.02);
 }
-
-// attack sound: small two-tone staccato
-function playAttack(){
-  ensureAudioResume();
-  if (!audioCtx) return;
-  playBeep(640, 0.08, 'sawtooth', 0.12);
-  setTimeout(()=> playBeep(940, 0.06, 'sine', 0.10), 80);
-}
-
-// hurt sound: short buzzy low hit
-function playHurt(){
-  ensureAudioResume();
-  if (!audioCtx) return;
-  // quick square with short noise-like effect by detuning
-  playBeep(160, 0.12, 'square', 0.16);
-  setTimeout(()=> playBeep(220, 0.09, 'sawtooth', 0.08), 40);
-}
-
-// win sound: small chord
-function playWin(){
-  ensureAudioResume();
-  if (!audioCtx) return;
-  const now = audioCtx.currentTime;
-  const freqs = [440, 660, 880];
-  const gain = audioCtx.createGain();
-  gain.gain.value = 0.14;
-  gain.connect(audioCtx.destination);
-  const oscs = freqs.map((f)=>{ const o = audioCtx.createOscillator(); o.type='sine'; o.frequency.value = f; o.connect(gain); return o; });
-  oscs.forEach(o=>o.start(now));
-  gain.gain.setValueAtTime(0.14, now);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.7);
-  oscs.forEach(o=>o.stop(now + 0.72));
-}
+function playAttack(){ ensureAudioResume(); playBeep(640,0.08,'sawtooth',0.12); setTimeout(()=>playBeep(940,0.06,'sine',0.10),80); }
+function playHurt(){ ensureAudioResume(); playBeep(160,0.12,'square',0.16); setTimeout(()=>playBeep(220,0.09,'sawtooth',0.08),40); }
+function playWin(){ ensureAudioResume(); const now = audioCtx.currentTime; const freqs=[440,660,880]; const gain = audioCtx.createGain(); gain.gain.value=0.14; gain.connect(audioCtx.destination); const oscs=freqs.map(f=>{const o=audioCtx.createOscillator(); o.type='sine'; o.frequency.value=f; o.connect(gain); return o;}); oscs.forEach(o=>o.start(now)); gain.gain.setValueAtTime(0.14, now); gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.7); oscs.forEach(o=>o.stop(now + 0.72)); }
+// boss-specific SFX
+function playBossCharge(){ ensureAudioResume(); playBeep(220,0.5,'sawtooth',0.12); setTimeout(()=>playBeep(300,0.3,'sine',0.08),200); }
+function playBossAttack(){ ensureAudioResume(); playBeep(420,0.12,'square',0.14); playBeep(320,0.08,'sawtooth',0.08); }
 
 /* resume audio on first interaction */
-function attachAutoAudioResume(){
-  const resume = ()=>{ ensureAudioResume(); document.removeEventListener('pointerdown', resume); document.removeEventListener('keydown', resume); };
-  document.addEventListener('pointerdown', resume);
-  document.addEventListener('keydown', resume);
-}
-attachAutoAudioResume();
+(function attachAutoResume(){ const resume = ()=>{ ensureAudioResume(); document.removeEventListener('pointerdown', resume); document.removeEventListener('keydown', resume); }; document.addEventListener('pointerdown', resume); document.addEventListener('keydown', resume); })();
 
 /* ================= helpers storage & safe log ================= */
-function readNumber(key,fallback){
-  try{ const v=localStorage.getItem(key); if(v===null) return fallback; const n=Number(v); return isNaN(n)?fallback:n; }catch(e){return fallback;}
-}
-function saveNumber(key,val){ try{ localStorage.setItem(key,String(val)); }catch(e){} }
-function safeLog(msg){
-  const el = document.getElementById('log');
-  const esc = String(msg).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  el.innerHTML = '> ' + esc + '<br>' + el.innerHTML;
-}
+function readNumber(k,f){ try{ const v=localStorage.getItem(k); if(v===null) return f; const n=Number(v); return isNaN(n)?f:n; }catch(e){return f;} }
+function saveNumber(k,v){ try{ localStorage.setItem(k,String(v)); }catch(e){} }
+function safeLog(msg){ const el=document.getElementById('log'); const esc=String(msg).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); el.innerHTML = '> ' + esc + '<br>' + el.innerHTML; }
 
 /* -------------------- game state -------------------- */
 const TOTAL_STAGES = 34;
@@ -235,8 +183,15 @@ let bossAlive = false;
 let spawnIntervalId = null;
 let rafId = null;
 let bullets = []; // projectile list
-let pointerX = 0, pointerY = 0;
 let isDragging = false;
+
+/* new boss behavior state */
+let bossPhase = 1; // 1..4
+let spiralOffset = 0;
+let ultimateUsed = false;
+let ultimateActive = false;
+let bossPhaseTextEl = document.getElementById('bossPhaseText');
+const bossWarningEl = document.getElementById('bossWarning');
 
 /* DOM refs */
 const coinsEl = document.getElementById('coins');
@@ -246,7 +201,6 @@ const bossHPText = document.getElementById('bossHPText');
 const playerHPText = document.getElementById('playerHPText');
 const statusText = document.getElementById('statusText');
 const currentStageText = document.getElementById('currentStageText');
-const stageDiffEl = document.getElementById('stageDiff');
 
 const canvas = document.getElementById('arenaCanvas');
 const ctx = canvas.getContext('2d');
@@ -262,20 +216,22 @@ const pointerEl = document.getElementById('pointer');
 const sweetZoneEl = document.getElementById('sweetZone');
 const resetBtn = document.getElementById('resetBtn');
 
-/* player (heart) representation */
+/* player */
 let player = {
   x: 120,
   y: canvas.height / 2,
   size: 18,
-  speed: 300 // px/sec
+  speed: 300,
+  vx: 0,
+  vy: 0
 };
 
-/* difficulty formulas */
+/* formulas */
 function damageMultiplier(){ return 1 + dcCount * 0.35; }
 function computeBossHPForStage(stage){ return Math.round(300 * Math.pow(1.5, stage-1)); }
 function computeBossAttackBase(stage){ return Math.round(8 * Math.pow(1.22, stage-1)); }
 
-/* -------------------- UI helpers -------------------- */
+/* UI update */
 function updateUI(){
   coinsEl.innerText = Math.round(coins);
   dcCountEl.innerText = dcCount;
@@ -283,13 +239,14 @@ function updateUI(){
   bossHPText.innerText = 'HP: ' + Math.max(0,Math.round(bossHP)) + ' / ' + Math.round(bossMaxHP);
   playerHPText.innerText = 'HP: ' + Math.max(0,Math.round(playerHP)) + ' / ' + Math.round(playerMaxHP);
   currentStageText.innerText = currentStage ? currentStage : '—';
+  bossPhaseTextEl.innerText = bossPhase;
   saveNumber('hc_coins', coins);
   saveNumber('hc_dcCount', dcCount);
   saveNumber('hc_dcCost', dcCost);
   saveNumber('hc_unlocked', unlockedStage);
 }
 
-/* -------------------- projectiles & physics -------------------- */
+/* projectiles */
 function spawnBulletAt(angle, speed, size=8, color='rgba(255,80,80,0.95)'){
   const spawnX = canvas.width - 60;
   const spawnY = canvas.height / 2;
@@ -302,19 +259,14 @@ function spawnBulletAt(angle, speed, size=8, color='rgba(255,80,80,0.95)'){
     color
   });
 }
-function spawnAimedBulletTowardsPlayer(speed, spread=0){
-  const sx = canvas.width - 60;
-  const sy = canvas.height / 2;
-  const dx = player.x - sx;
-  const dy = player.y - sy;
-  const baseAngle = Math.atan2(dy,dx);
-  const angle = baseAngle + (Math.random()*2-1) * spread;
-  spawnBulletAt(angle, speed);
+function spawnBulletFrom(x,y,angle,speed,size=8,color='rgba(255,80,80,0.95)'){
+  bullets.push({ x, y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed, r:size, color });
 }
 function cleanupBullets(){
   bullets = bullets.filter(b => b.x + b.r > -50 && b.x - b.r < canvas.width + 50 && b.y + b.r > -50 && b.y - b.r < canvas.height + 50);
 }
-/* collision circle-rect */
+
+/* collision */
 function rectCircleColliding(circle, rect){
   const distX = Math.abs(circle.x - (rect.x + rect.w/2));
   const distY = Math.abs(circle.y - (rect.y + rect.h/2));
@@ -322,12 +274,11 @@ function rectCircleColliding(circle, rect){
   if (distY > (rect.h/2 + circle.r)) return false;
   if (distX <= (rect.w/2)) return true;
   if (distY <= (rect.h/2)) return true;
-  const dx = distX - rect.w/2;
-  const dy = distY - rect.h/2;
+  const dx = distX - rect.w/2; const dy = distY - rect.h/2;
   return (dx*dx + dy*dy <= (circle.r*circle.r));
 }
 
-/* -------------------- animation & loop -------------------- */
+/* render & physics loop */
 let lastFrame = performance.now();
 function rafLoop(now){
   const dt = (now - lastFrame) / 1000;
@@ -337,10 +288,7 @@ function rafLoop(now){
   rafId = requestAnimationFrame(rafLoop);
 }
 function updatePhysics(dt){
-  for(const b of bullets){
-    b.x += b.vx * dt;
-    b.y += b.vy * dt;
-  }
+  for(const b of bullets){ b.x += b.vx * dt; b.y += b.vy * dt; }
   cleanupBullets();
 
   const playerRect = { x: player.x - player.size/2, y: player.y - player.size/2, w: player.size, h: player.size };
@@ -348,16 +296,10 @@ function updatePhysics(dt){
     if (rectCircleColliding(bullets[i], playerRect)){
       const dmg = Math.max(1, Math.round(6 + Math.random()*6));
       playerHP -= dmg;
-      // play hurt SFX
       playHurt();
       safeLog('حمله برخورد کرد — ' + dmg + ' دمیج');
       bullets.splice(i,1);
-      if (playerHP <= 0){
-        playerHP = 0;
-        updateUI();
-        endFight(false);
-        return;
-      }
+      if (playerHP <= 0){ playerHP = 0; updateUI(); endFight(false); return; }
       updateUI();
     }
   }
@@ -365,74 +307,167 @@ function updatePhysics(dt){
 function render(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   const bossX = canvas.width - 60, bossY = canvas.height/2;
+  // boss core
   ctx.beginPath();
-  ctx.fillStyle = 'rgba(125,0,178,0.12)';
-  ctx.arc(bossX, bossY, 36, 0, Math.PI*2);
+  ctx.fillStyle = (ultimateActive ? 'rgba(255,40,80,0.16)' : 'rgba(125,0,178,0.12)');
+  ctx.arc(bossX, bossY, 36 + (bossPhase-1)*2, 0, Math.PI*2);
   ctx.fill();
   ctx.closePath();
-  ctx.beginPath();
-  ctx.fillStyle = '#ff6b6b';
-  ctx.arc(bossX - 12, bossY - 8, 6, 0, Math.PI*2);
-  ctx.arc(bossX + 12, bossY - 8, 6, 0, Math.PI*2);
-  ctx.fill();
-  ctx.closePath();
+  // boss eyes
+  ctx.beginPath(); ctx.fillStyle = '#ff6b6b'; ctx.arc(bossX - 12, bossY - 8, 6, 0, Math.PI*2); ctx.arc(bossX + 12, bossY - 8, 6, 0, Math.PI*2); ctx.fill(); ctx.closePath();
 
-  for(const b of bullets){
-    ctx.beginPath();
-    ctx.fillStyle = b.color;
-    ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
-    ctx.fill();
-    ctx.closePath();
-  }
+  // bullets
+  for(const b of bullets){ ctx.beginPath(); ctx.fillStyle = b.color; ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill(); ctx.closePath(); }
 
-  ctx.save();
-  ctx.translate(player.x, player.y);
-  ctx.rotate(Math.sin(performance.now()/200)*0.05);
-  ctx.fillStyle = '#ffd59a';
-  const s = player.size;
-  ctx.fillRect(-s/2, -s/2, s, s);
-  ctx.restore();
+  // player
+  ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(Math.sin(performance.now()/200)*0.05); ctx.fillStyle = '#ffd59a'; const s = player.size; ctx.fillRect(-s/2, -s/2, s, s); ctx.restore();
 }
 
-/* -------------------- boss attack patterns -------------------- */
+/* -------------------- boss patterns & controller -------------------- */
+let spawnTickCount = 0;
+function updateBossPhase(){
+  if (!bossMaxHP) return;
+  const pct = bossHP / bossMaxHP;
+  let newPhase = 1;
+  if (pct <= 0.25) newPhase = 4;
+  else if (pct <= 0.5) newPhase = 3;
+  else if (pct <= 0.75) newPhase = 2;
+  else newPhase = 1;
+  if (newPhase !== bossPhase){
+    bossPhase = newPhase;
+    safeLog('باس وارد فاز ' + bossPhase + ' شد!');
+    // small audio hint
+    playBossCharge();
+    // make spawning slightly faster on higher phases by restarting controller
+    if (spawnIntervalId) { stopSpawningBullets(); startSpawningBullets(currentStage); }
+  }
+  updateUI();
+}
+
+/* pattern helpers */
+function spiralPattern(stage, count=10, speed=180, rotations=1, color='rgba(220,60,220,0.95)'){
+  // spawn count bullets around circle offset by spiralOffset
+  for (let i=0;i<count;i++){
+    const angle = spiralOffset + (i / count) * Math.PI * 2;
+    const s = 6;
+    spawnBulletAt(angle, speed, s, color);
+  }
+  spiralOffset += 0.28 + bossPhase * 0.05; // rotate offset for next spiral
+  playBossAttack();
+}
+function burstPattern(stage, pieces=6, spread=0.9, speed=200){
+  const baseAngle = Math.atan2((canvas.height/2) - (canvas.height/2), (canvas.width - 60) - (canvas.width - 60)); // just placeholder
+  // aim roughly to player with spread
+  const centerAngle = Math.atan2(player.y - canvas.height/2, player.x - (canvas.width - 60));
+  for (let i=0;i<pieces;i++){
+    const angle = centerAngle + (i - (pieces-1)/2) * spread;
+    spawnBulletAt(angle, speed + i*8, 7);
+  }
+  playBossAttack();
+}
+function wavePattern(stage, rows=5, speed=160, color='rgba(255,120,60,0.95)'){
+  // spawn bullets across vertical stripes moving left with slight vy
+  const gap = (canvas.height - 80) / (rows - 1 || 1);
+  for (let r=0;r<rows;r++){
+    const y = 40 + r * gap;
+    const vx = -speed;
+    bullets.push({ x: canvas.width + 20, y, vx: vx * (0.9 + Math.random()*0.2), vy: Math.sin(r + Date.now()/500)*12 * 0.02, r:6, color });
+  }
+  playBossAttack();
+}
+function aimedPredictive(stage, speed=220){
+  // predict player's future position using last velocity
+  const sx = canvas.width - 60, sy = canvas.height/2;
+  // predict t as distance / speed
+  const dx = player.x - sx, dy = player.y - sy;
+  const dist = Math.hypot(dx,dy);
+  const t = Math.max(0.2, dist / speed); // seconds
+  const predictedX = player.x + (player.vx || 0) * t * 1.2;
+  const predictedY = player.y + (player.vy || 0) * t * 1.0;
+  const angle = Math.atan2(predictedY - sy, predictedX - sx);
+  spawnBulletAt(angle, speed * (0.95 + Math.random()*0.2), 8, 'rgba(255,200,100,0.95)');
+  playBossAttack();
+}
+
+/* controller: choose pattern based on phase */
+function chooseAndExecutePattern(stage){
+  if (!bossAlive || ultimateActive) return;
+  spawnTickCount++;
+  // probabilities change by phase
+  const r = Math.random();
+  if (bossPhase === 1){
+    if (r < 0.5) aimedPredictive(stage, 160 + Math.random()*40);
+    else if (r < 0.8) burstPattern(stage, 4, 0.9, 170);
+    else wavePattern(stage, 3, 150);
+  } else if (bossPhase === 2){
+    if (r < 0.35) aimedPredictive(stage, 180 + Math.random()*50);
+    else if (r < 0.7) burstPattern(stage, 5, 0.8, 180);
+    else spiralPattern(stage, 10 + bossPhase*2, 180 + bossPhase*10);
+  } else if (bossPhase === 3){
+    if (r < 0.25) spiralPattern(stage, 12 + bossPhase*2, 200 + bossPhase*10);
+    else if (r < 0.6) burstPattern(stage, 6, 0.7, 200);
+    else wavePattern(stage, 5 + bossPhase, 190);
+  } else {
+    // phase 4: aggressive + chance -> ultimate
+    if (!ultimateUsed && Math.random() < 0.06){
+      triggerUltimate(stage);
+      return;
+    }
+    if (r < 0.3) spiralPattern(stage, 16, 220);
+    else if (r < 0.65) burstPattern(stage, 8, 0.6, 220);
+    else wavePattern(stage, 6 + bossPhase, 210);
+  }
+}
+
+/* ultimate attack */
+function triggerUltimate(stage){
+  if (ultimateUsed || ultimateActive || !bossAlive) return;
+  ultimateActive = true;
+  ultimateUsed = true;
+  // telegraph
+  bossWarningEl.style.display = 'block';
+  playBossCharge();
+  safeLog('باس دارد بارگذاری می‌کند — حملهٔ نهایی در راه است!');
+  // pause normal spawn
+  stopSpawningBullets();
+  // after 900ms, heavy spiral for 2.2s
+  setTimeout(()=>{
+    bossWarningEl.style.display = 'none';
+    playBossCharge();
+    const ultimateDuration = 2200;
+    const end = performance.now() + ultimateDuration;
+    // spawn dense spiral bursts every 120ms
+    const ultInterval = setInterval(()=>{
+      if (!ultimateActive) { clearInterval(ultInterval); return; }
+      // dense spiral + aimed bolts
+      spiralPattern(stage, 18, 260);
+      aimedPredictive(stage, 260);
+      // also small waves
+      wavePattern(stage, 6, 200, 'rgba(255,200,160,0.95)');
+      // slight damage to player on proximity? (handled by collisions)
+      if (performance.now() >= end) {
+        clearInterval(ultInterval);
+        ultimateActive = false;
+        // resume spawn
+        if (bossAlive) startSpawningBullets(stage);
+      }
+    }, 120);
+  }, 900);
+}
+
+/* spawn controller start/stop */
 function startSpawningBullets(stage){
   stopSpawningBullets();
-  const baseSpeed = 120 + (stage-1)*18;
-  const spawnInterval = Math.max(420, 900 - (stage-1)*18);
-  spawnIntervalId = setInterval(()=>{
-    if (!bossAlive) return;
-    const r = Math.random();
-    if (r < 0.45){
-      spawnAimedBulletTowardsPlayer(baseSpeed * (0.9 + Math.random()*0.4), 0.18);
-    } else if (r < 0.75){
-      const bulletsCount = 4;
-      const centerAngle = Math.atan2(player.y - canvas.height/2, player.x - (canvas.width - 60));
-      for(let i=0;i<bulletsCount;i++){
-        const angle = centerAngle + (i - (bulletsCount-1)/2) * 0.22;
-        spawnBulletAt(angle, baseSpeed * 0.9 + i*8, 7);
-      }
-    } else {
-      const fromTop = Math.random() < 0.5;
-      const y = fromTop ? 40 : canvas.height - 40;
-      const sx = canvas.width - 60;
-      for(let i=0;i<6;i++){
-        bullets.push({
-          x: sx + i*6,
-          y: y + i*10,
-          vx: - (baseSpeed + i*6) * 0.9,
-          vy: (fromTop ? 1 : -1) * (20 + i*6) * 0.04,
-          r: 6,
-          color: 'rgba(255,120,60,0.95)'
-        });
-      }
-    }
-  }, spawnInterval);
+  // spawn interval shorter with stage and phase
+  const base = Math.max(280, 900 - (stage-1)*26);
+  const phaseMod = Math.max(1, 1.0 - (bossPhase-1)*0.08);
+  const interval = Math.round(base * phaseMod);
+  spawnTickCount = 0;
+  spawnIntervalId = setInterval(()=>{ chooseAndExecutePattern(stage); }, interval);
 }
-function stopSpawningBullets(){
-  if (spawnIntervalId){ clearInterval(spawnIntervalId); spawnIntervalId = null; }
-}
+function stopSpawningBullets(){ if (spawnIntervalId){ clearInterval(spawnIntervalId); spawnIntervalId = null; } }
 
-/* -------------------- fight flow -------------------- */
+/* -------------------- fight flow (start/end) -------------------- */
 function startStage(stage){
   if (bossAlive) { safeLog('در حال مبارزه‌ای — اول تمومش کن یا فرار کن.'); return; }
   currentStage = stage;
@@ -441,6 +476,7 @@ function startStage(stage){
   bossAttackBase = computeBossAttackBase(stage);
   playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
   playerHP = playerMaxHP;
+  bossPhase = 1; ultimateUsed = false; ultimateActive = false;
   bossAlive = true;
   bullets = [];
   safeLog('مرحله '+stage+' شروع شد — باس HP: ' + bossMaxHP);
@@ -454,15 +490,14 @@ function startStage(stage){
 function endFight(victory){
   bossAlive = false;
   stopSpawningBullets();
-  if (spawnIntervalId){ clearInterval(spawnIntervalId); spawnIntervalId = null; }
   if (rafId){ cancelAnimationFrame(rafId); rafId = null; }
   bullets = [];
   retreatBtn.style.display = 'none';
   timingUI.style.display = 'none';
   timingUI.setAttribute('aria-hidden','true');
-  hideTouchDrag();
+  bossWarningEl.style.display = 'none';
+  ultimateActive = false;
   if (victory){
-    // play win SFX
     playWin();
     const reward = Math.round(100 * Math.max(1,currentStage) * (1 + dcCount*0.08));
     coins += reward;
@@ -484,134 +519,66 @@ function endFight(victory){
 }
 
 /* retreat */
-retreatBtn.addEventListener('click', ()=>{
-  if (!bossAlive) return;
-  safeLog('فرار کردی از مبارزه.');
-  endFight(false);
-});
+retreatBtn.addEventListener('click', ()=>{ if (!bossAlive) return; safeLog('فرار کردی از مبارزه.'); endFight(false); });
 
-/* -------------------- attack minigame (timing) -------------------- */
-let timing = {
-  running: false,
-  pos: 0, // 0..1
-  speed: 1.6,
-  sweetLeft: 0.25, sweetWidth: 0.18
-};
-
+/* -------------------- attack minigame (timing) (unchanged logic but triggers phase update) -------------------- */
+let timing = { running:false, pos:0, speed:1.6, sweetLeft:0.25, sweetWidth:0.18 };
 function startTimingMinigame(){
-  if (!bossAlive) { safeLog('الان باس نیست.'); return; }
+  if (!bossAlive){ safeLog('الان باس نیست.'); return; }
   if (timing.running) return;
-
-  // prepare sweet zone and pointer
   const baseWidth = 0.18;
   timing.sweetWidth = Math.min(0.45, baseWidth + dcCount * 0.02);
   timing.sweetLeft = Math.max(0.08, Math.min(0.78, 0.25 + (Math.random() * 0.5 - 0.15)));
-  timing.pos = 0;
-  timing.running = true;
-  timing.startTime = performance.now();
-  timingUI.style.display = 'block';
-  timingUI.setAttribute('aria-hidden','false');
-
-  // visually update sweet zone
-  const parentWidth = timingUI.clientWidth || 300;
-  sweetZoneEl.style.left = (timing.sweetLeft * 100) + '%';
-  sweetZoneEl.style.width = (timing.sweetWidth * 100) + '%';
-
-  // pause spawning while focusing on minigame
+  timing.pos = 0; timing.running = true; timing.startTime = performance.now();
+  timingUI.style.display = 'block'; timingUI.setAttribute('aria-hidden','false');
   const hadSpawn = !!spawnIntervalId;
-  if (spawnIntervalId){ stopSpawningBullets(); }
-
-  // define listeners in outer scope so we can remove them reliably
-  let onKey = null;
-  let clickHandler = null;
-
+  if (spawnIntervalId) stopSpawningBullets();
+  let onKey = null; let clickHandler = null;
   function finishTiming(userPressed){
-    if (!timing.running) return;
-    timing.running = false;
-    timingUI.style.display = 'none';
-    timingUI.setAttribute('aria-hidden','true');
-
-    // remove listeners (safe even if not attached)
-    window.removeEventListener('keydown', onKey);
-    attackBtn.removeEventListener('click', clickHandler);
-
-    // compute quality
-    const now = performance.now();
-    const elapsed = (now - timing.startTime) / 1000;
-    const winPos = timing.pos;
-    const left = timing.sweetLeft;
-    const right = timing.sweetLeft + timing.sweetWidth;
+    if (!timing.running) return; timing.running = false; timingUI.style.display = 'none'; timingUI.setAttribute('aria-hidden','true');
+    window.removeEventListener('keydown', onKey); attackBtn.removeEventListener('click', clickHandler);
+    const winPos = timing.pos; const left = timing.sweetLeft; const right = timing.sweetLeft + timing.sweetWidth;
     let quality = 0;
     if (winPos >= left && winPos <= right){
-      const center = (left + right)/2;
-      const dist = Math.abs(winPos - center) / (timing.sweetWidth/2);
+      const center = (left + right)/2; const dist = Math.abs(winPos - center) / (timing.sweetWidth/2);
       quality = (dist < 0.18) ? 3 : (dist < 0.45 ? 2 : 1);
-    } else {
-      quality = 0;
-    }
-
+    } else quality = 0;
     let baseDamage;
     if (quality === 3) baseDamage = Math.round(45 + Math.random()*12);
     else if (quality === 2) baseDamage = Math.round(28 + Math.random()*10);
     else if (quality === 1) baseDamage = Math.round(16 + Math.random()*8);
     else baseDamage = Math.round(6 + Math.random()*6);
-
     const dmg = Math.round(baseDamage * damageMultiplier());
     bossHP -= dmg;
+    updateBossPhase(); // check phase after damage
     const reward = Math.round(8 * Math.max(1,currentStage) * (1 + quality*0.25));
     coins += reward;
-
-    // play attack SFX
     playAttack();
-
     safeLog('تو حمله زدی — کیفیت: ' + (['Fail','OK','Great','Perfect'][quality]) + ' | ' + dmg + ' دمیج — +' + reward + ' سکه');
     updateUI();
-
-    // resume spawn if needed
-    setTimeout(()=>{ if (hadSpawn && bossAlive) startSpawningBullets(currentStage); }, 300);
-
-    if (bossHP <= 0){
-      bossHP = 0;
-      updateUI();
-      endFight(true);
-    }
+    setTimeout(()=>{ if (hadSpawn && bossAlive && !ultimateActive) startSpawningBullets(currentStage); }, 300);
+    if (bossHP <= 0){ bossHP = 0; updateUI(); endFight(true); }
   }
-
-  // pointer animation loop
   function step(){
     if (!timing.running) return;
-    const now = performance.now();
-    const elapsed = (now - timing.startTime) / 1000;
+    const now = performance.now(); const elapsed = (now - timing.startTime) / 1000;
     timing.pos = (Math.sin(elapsed * Math.PI * timing.speed - Math.PI/2) + 1) / 2;
-    const parentW = timingUI.clientWidth || parentWidth;
-    const px = timing.pos * parentW;
-    pointerEl.style.left = px + 'px';
-
-    if (elapsed > 3.2){
-      // auto-fail
-      finishTiming(false);
-      return;
-    }
+    const parentW = timingUI.clientWidth || 300; pointerEl.style.left = (timing.pos * parentW) + 'px';
+    if (elapsed > 3.2){ finishTiming(false); return; }
     requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
-
-  // listeners (defined as variables so they can be removed by finishTiming)
   onKey = function(e){
-    // prevent page scroll with space
-    if (e.key === ' ' || e.key === 'Spacebar') { e.preventDefault(); }
+    if (e.key === ' ' || e.key === 'Spacebar'){ e.preventDefault(); }
     if (!timing.running) return;
-    if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter'){
-      finishTiming(true);
-    }
+    if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter'){ finishTiming(true); }
   };
   window.addEventListener('keydown', onKey);
-
   clickHandler = function(){ if (timing.running) finishTiming(true); };
   attackBtn.addEventListener('click', clickHandler);
 }
 
-/* -------------------- input: keyboard & touch drag -------------------- */
+/* -------------------- input movement & touch -------------------- */
 const keys = {};
 window.addEventListener('keydown', (e)=>{ keys[e.key] = true; });
 window.addEventListener('keyup', (e)=>{ keys[e.key] = false; });
@@ -621,18 +588,13 @@ function handlePlayerMovement(){
   const now = performance.now();
   const dt = (now - lastMoveTime) / 1000;
   lastMoveTime = now;
-  let dx = 0, dy = 0;
-  if (keys['ArrowLeft'] || keys['a'] || keys['A']) dx -= 1;
-  if (keys['ArrowRight'] || keys['d'] || keys['D']) dx += 1;
-  if (keys['ArrowUp'] || keys['w'] || keys['W']) dy -= 1;
-  if (keys['ArrowDown'] || keys['s'] || keys['S']) dy += 1;
+  let dx=0, dy=0;
+  if (keys['ArrowLeft']||keys['a']||keys['A']) dx -= 1;
+  if (keys['ArrowRight']||keys['d']||keys['D']) dx += 1;
+  if (keys['ArrowUp']||keys['w']||keys['W']) dy -= 1;
+  if (keys['ArrowDown']||keys['s']||keys['S']) dy += 1;
   const len = Math.hypot(dx,dy);
-  if (len > 0){
-    dx /= len; dy /= len;
-    player.x += dx * player.speed * dt;
-    player.y += dy * player.speed * dt;
-    clampPlayerToCanvas();
-  }
+  if (len>0){ dx/=len; dy/=len; player.vx = dx * player.speed; player.vy = dy * player.speed; player.x += dx * player.speed * dt; player.y += dy * player.speed * dt; clampPlayerToCanvas(); } else { player.vx = 0; player.vy = 0; }
   requestAnimationFrame(handlePlayerMovement);
 }
 function clampPlayerToCanvas(){
@@ -642,7 +604,6 @@ function clampPlayerToCanvas(){
 }
 
 /* touch drag */
-let touchActive = false;
 function setupTouchDrag(){
   function moveFromEvent(e){
     const rect = canvas.getBoundingClientRect();
@@ -652,69 +613,44 @@ function setupTouchDrag(){
     if (clientX == null) return;
     const x = (clientX - rect.left) * (canvas.width / rect.width);
     const y = (clientY - rect.top) * (canvas.height / rect.height);
-    player.x = x; player.y = y;
-    clampPlayerToCanvas();
+    player.x = x; player.y = y; clampPlayerToCanvas();
   }
-  function onStart(e){
-    touchActive = true;
-    isDragging = true;
-    moveFromEvent(e);
-  }
-  function onMove(e){
-    if (!touchActive) return;
-    moveFromEvent(e);
-  }
-  function onEnd(e){
-    touchActive = false;
-    isDragging = false;
-  }
-  canvas.addEventListener('touchstart', onStart, {passive:false});
-  canvas.addEventListener('touchmove', onMove, {passive:false});
-  canvas.addEventListener('touchend', onEnd, {passive:false});
-  canvas.addEventListener('mousedown', onStart);
+  canvas.addEventListener('touchstart', (e)=>{ isDragging=true; moveFromEvent(e); }, {passive:false});
+  canvas.addEventListener('touchmove', (e)=>{ if (isDragging) moveFromEvent(e); }, {passive:false});
+  window.addEventListener('touchend', ()=>{ isDragging=false; }, {passive:false});
+  canvas.addEventListener('mousedown', (e)=>{ isDragging=true; moveFromEvent(e); });
   window.addEventListener('mousemove', (e)=>{ if (isDragging) moveFromEvent(e); });
-  window.addEventListener('mouseup', ()=>{ isDragging=false; touchActive=false; });
+  window.addEventListener('mouseup', ()=>{ isDragging=false; });
 }
-function hideTouchDrag(){ /* listeners harmless to keep */ }
 
-/* -------------------- buy data center & balance -------------------- */
+/* -------------------- buy DC & stages (unchanged) -------------------- */
 function buyDataCenter(){
   if (coins < dcCost){ safeLog('سکه کافی نداری'); return; }
   coins -= dcCost; dcCount += 1;
   dcCost = Math.min(999999999, Math.round(dcCost * 1.6));
-  const oldMax = playerMaxHP;
-  playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
-  const hpIncrease = playerMaxHP - oldMax;
+  const oldMax = playerMaxHP; playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25; const hpIncrease = playerMaxHP - oldMax;
   playerHP = Math.min(playerMaxHP, playerHP + Math.round(hpIncrease * 0.7));
   safeLog('دیتاسنتر خریدی — +25 Max HP و HP فعلی افزایش یافت');
   updateUI();
 }
 
-/* -------------------- stages grid -------------------- */
 function buildStages(){
   stagesGrid.innerHTML = '';
   for(let s=1;s<=TOTAL_STAGES;s++){
-    const div = document.createElement('div');
-    div.style.padding = '10px';
-    div.style.borderRadius = '8px';
-    div.style.background = (s <= unlockedStage) ? '#101014' : '#0b0b0d';
-    div.style.border = '1px solid rgba(255,255,255,0.03)';
-    div.style.cursor = (s <= unlockedStage) ? 'pointer' : 'not-allowed';
+    const div=document.createElement('div');
+    div.style.padding='10px'; div.style.borderRadius='8px'; div.style.background=(s<=unlockedStage)?'#101014':'#0b0b0d';
+    div.style.border='1px solid rgba(255,255,255,0.03)'; div.style.cursor=(s<=unlockedStage)?'pointer':'not-allowed';
     div.innerHTML = '<div style="font-weight:800;color:var(--accent)">مرحله '+s+'</div><div style="font-size:0.85rem;margin-top:6px">'+(s<=4?'آسان':s<=12?'متوسط':s<=24?'سخت':'نهایی')+'</div>';
-    if (s <= unlockedStage){
-      div.addEventListener('click', ()=>{ startStage(s); closeModal(); });
-    } else {
-      div.title = 'این مرحله قفل است';
-    }
+    if (s<=unlockedStage) div.addEventListener('click', ()=>{ startStage(s); closeModal(); }); else div.title='این مرحله قفل است';
     stagesGrid.appendChild(div);
   }
 }
-function openModal(){ stageModal.style.display = 'flex'; }
-function closeModal(){ stageModal.style.display = 'none'; }
+function openModal(){ stageModal.style.display='flex'; }
+function closeModal(){ stageModal.style.display='none'; }
 
-/* -------------------- events -------------------- */
-openStagesBtn.addEventListener('click', ()=>{ buildStages(); openModal(); });
-closeStageModal.addEventListener('click', closeModal);
+/* events */
+document.getElementById('openStagesBtn').addEventListener('click', ()=>{ buildStages(); openModal(); });
+document.getElementById('closeStageModal').addEventListener('click', closeModal);
 attackBtn.addEventListener('click', ()=>{ if (!timing.running) startTimingMinigame(); });
 buyDCBtn.addEventListener('click', buyDataCenter);
 resetBtn.addEventListener('click', ()=>{ if(confirm('میخوای ذخیره رو ریست کنی؟')){ localStorage.clear(); location.reload(); } });
@@ -730,15 +666,13 @@ function init(){
   }
   setTimeout(()=>{ resizeCanvas(); player.x = 120; player.y = canvas.height/2; updateUI(); render(); }, 50);
   window.addEventListener('resize', ()=>{ resizeCanvas(); });
-
   setupTouchDrag();
   handlePlayerMovement();
   updateUI();
-  safeLog('سیستم مبارزه Undertale-style آماده است — مرحله رو انتخاب کن و بجنگ!');
+  safeLog('سیستم باس پیشرفته آماده است — مرحله رو انتخاب کن و بجنگ!');
 }
-
 window.addEventListener('beforeunload', ()=>{ stopSpawningBullets(); if (rafId) cancelAnimationFrame(rafId); });
-window.__hc = { startStage, buyDataCenter, getState: ()=>({coins,dcCount,dcCost,unlockedStage,playerHP,playerMaxHP,bossHP,currentStage}) };
+window.__hc = { startStage, buyDataCenter, getState: ()=>({coins,dcCount,dcCost,unlockedStage,playerHP,playerMaxHP,bossHP,currentStage,bossPhase}) };
 init();
 </script>
 </body>
