@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Happy Coin — Undertale-style Combat</title>
+<title>Happy Coin — Undertale-style Combat (Patched)</title>
 <style>
   :root{
     --bg1:#070709; --bg2:#121217; --accent:#00ffea; --danger:#ff004c; --purple:#7d00b2;
@@ -26,12 +26,13 @@
   .controls{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
   .btn{background:var(--accent); color:#001; border:none; padding:10px 14px; border-radius:8px; font-weight:700; cursor:pointer}
   .btn.secondary{background:#222; color:#eaeaea; border:1px solid rgba(255,255,255,0.03)}
+  .btn.ghost{background:transparent; border:1px dashed rgba(255,255,255,0.04)}
   .status{font-size:0.95rem}
   .log{background:#0b0b0d; width:100%; max-width:980px; padding:12px; border-radius:10px; font-size:0.9rem; max-height:220px; overflow:auto; border:1px solid rgba(255,255,255,0.02)}
   .small{font-size:0.87rem; opacity:0.9}
   .made-by{font-weight:700; color:#ffd59a; margin-top:6px}
   .timing-ui{width:100%; max-width:400px; height:36px; background:#111; border-radius:8px; border:1px solid rgba(255,255,255,0.04); position:relative; overflow:hidden; margin-top:10px}
-  .timing-bar-pointer{position:absolute; top:0; bottom:0; width:6px; background:var(--accent); transform:translateX(-50%);}
+  .timing-bar-pointer{position:absolute; top:0; bottom:0; width:6px; background:var(--accent); transform:translateX(-50%); left:0}
   .timing-bar-sweet{position:absolute; top:6px; bottom:6px; height:calc(100% - 12px); border-radius:6px; background:rgba(0,255,170,0.18); left:40%; width:20%;}
   .arena-top{display:flex; gap:12px; width:100%; justify-content:space-between; align-items:center; margin-bottom:6px}
   .hp{text-align:center}
@@ -42,7 +43,7 @@
 </head>
 <body>
 <header>
-  <h1>Happy Coin: Crypto War — Undertale-style</h1>
+  <h1>Happy Coin: Crypto War — Undertale-style (Patched)</h1>
   <div class="top-stats">
     <div class="chip">رمز ارز: <strong id="coins">0</strong> 🪙</div>
     <div class="chip">دیتاسنتر: <strong id="dcCount">0</strong></div>
@@ -75,7 +76,7 @@
         <!-- timing minigame -->
         <div id="timingUI" class="timing-ui" style="display:none" aria-hidden="true">
           <div id="sweetZone" class="timing-bar-sweet"></div>
-          <div id="pointer" class="timing-bar-pointer"></div>
+          <div id="pointer" class="timing-bar-pointer" style="left:0px"></div>
         </div>
 
       </div>
@@ -115,7 +116,7 @@
 </div>
 
 <footer style="width:100%;max-width:1100px;margin-top:12px;text-align:center;color:#cfd8dc">
-  <div>نسخه آزمایشی — نسخه Undertale-like</div>
+  <div>نسخه آزمایشی — نسخه Undertale-like (Patched)</div>
   <div class="made-by">ساخته شده توسط Rob Lucci</div>
 </footer>
 
@@ -208,7 +209,6 @@ function updateUI(){
 
 /* -------------------- projectiles & physics -------------------- */
 function spawnBulletAt(angle, speed, size=8, color='rgba(255,80,80,0.95)'){
-  // spawn from boss area (right side) aiming toward a direction
   const spawnX = canvas.width - 60;
   const spawnY = canvas.height / 2;
   bullets.push({
@@ -220,7 +220,6 @@ function spawnBulletAt(angle, speed, size=8, color='rgba(255,80,80,0.95)'){
     color
   });
 }
-
 function spawnAimedBulletTowardsPlayer(speed, spread=0){
   const sx = canvas.width - 60;
   const sy = canvas.height / 2;
@@ -230,15 +229,11 @@ function spawnAimedBulletTowardsPlayer(speed, spread=0){
   const angle = baseAngle + (Math.random()*2-1) * spread;
   spawnBulletAt(angle, speed);
 }
-
-/* clear bullets offscreen */
 function cleanupBullets(){
   bullets = bullets.filter(b => b.x + b.r > -50 && b.x - b.r < canvas.width + 50 && b.y + b.r > -50 && b.y - b.r < canvas.height + 50);
 }
-
-/* collision circle-rect simple */
+/* collision circle-rect */
 function rectCircleColliding(circle, rect){
-  // rect = {x,y,w,h} where rect.x,rect.y is top-left
   const distX = Math.abs(circle.x - (rect.x + rect.w/2));
   const distY = Math.abs(circle.y - (rect.y + rect.h/2));
   if (distX > (rect.w/2 + circle.r)) return false;
@@ -259,20 +254,16 @@ function rafLoop(now){
   render();
   rafId = requestAnimationFrame(rafLoop);
 }
-
 function updatePhysics(dt){
-  // move bullets
   for(const b of bullets){
     b.x += b.vx * dt;
     b.y += b.vy * dt;
   }
   cleanupBullets();
 
-  // collisions: bullets vs player
   const playerRect = { x: player.x - player.size/2, y: player.y - player.size/2, w: player.size, h: player.size };
   for (let i = bullets.length - 1; i >= 0; i--){
     if (rectCircleColliding(bullets[i], playerRect)){
-      // collide
       const dmg = Math.max(1, Math.round(6 + Math.random()*6));
       playerHP -= dmg;
       safeLog('حمله برخورد کرد — ' + dmg + ' دمیج');
@@ -287,20 +278,14 @@ function updatePhysics(dt){
     }
   }
 }
-
 function render(){
-  // clear
   ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  // draw boss area on right
   const bossX = canvas.width - 60, bossY = canvas.height/2;
-  // boss "core"
   ctx.beginPath();
   ctx.fillStyle = 'rgba(125,0,178,0.12)';
   ctx.arc(bossX, bossY, 36, 0, Math.PI*2);
   ctx.fill();
   ctx.closePath();
-  // boss eyes
   ctx.beginPath();
   ctx.fillStyle = '#ff6b6b';
   ctx.arc(bossX - 12, bossY - 8, 6, 0, Math.PI*2);
@@ -308,7 +293,6 @@ function render(){
   ctx.fill();
   ctx.closePath();
 
-  // bullets
   for(const b of bullets){
     ctx.beginPath();
     ctx.fillStyle = b.color;
@@ -317,7 +301,6 @@ function render(){
     ctx.closePath();
   }
 
-  // player (heart-like square)
   ctx.save();
   ctx.translate(player.x, player.y);
   ctx.rotate(Math.sin(performance.now()/200)*0.05);
@@ -330,17 +313,14 @@ function render(){
 /* -------------------- boss attack patterns -------------------- */
 function startSpawningBullets(stage){
   stopSpawningBullets();
-  const baseSpeed = 120 + (stage-1)*18; // px/sec
-  const spawnInterval = Math.max(420, 900 - (stage-1)*18); // ms
+  const baseSpeed = 120 + (stage-1)*18;
+  const spawnInterval = Math.max(420, 900 - (stage-1)*18);
   spawnIntervalId = setInterval(()=>{
     if (!bossAlive) return;
-    // choose pattern:
     const r = Math.random();
     if (r < 0.45){
-      // aimed bullet(s)
       spawnAimedBulletTowardsPlayer(baseSpeed * (0.9 + Math.random()*0.4), 0.18);
     } else if (r < 0.75){
-      // spread volley
       const bulletsCount = 4;
       const centerAngle = Math.atan2(player.y - canvas.height/2, player.x - (canvas.width - 60));
       for(let i=0;i<bulletsCount;i++){
@@ -348,12 +328,9 @@ function startSpawningBullets(stage){
         spawnBulletAt(angle, baseSpeed * 0.9 + i*8, 7);
       }
     } else {
-      // quick wave from top or bottom across
       const fromTop = Math.random() < 0.5;
       const y = fromTop ? 40 : canvas.height - 40;
       const sx = canvas.width - 60;
-      const dx = -1.0; // left
-      const angle = Math.atan2((canvas.height/2) - y, dx);
       for(let i=0;i<6;i++){
         bullets.push({
           x: sx + i*6,
@@ -367,7 +344,6 @@ function startSpawningBullets(stage){
     }
   }, spawnInterval);
 }
-
 function stopSpawningBullets(){
   if (spawnIntervalId){ clearInterval(spawnIntervalId); spawnIntervalId = null; }
 }
@@ -379,7 +355,6 @@ function startStage(stage){
   bossMaxHP = computeBossHPForStage(stage);
   bossHP = bossMaxHP;
   bossAttackBase = computeBossAttackBase(stage);
-  // recalc player
   playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
   playerHP = playerMaxHP;
   bossAlive = true;
@@ -406,7 +381,6 @@ function endFight(victory){
     const reward = Math.round(100 * Math.max(1,currentStage) * (1 + dcCount*0.08));
     coins += reward;
     safeLog('تبریک! باس شکست خورد — +' + reward + ' سکه');
-    // unlock next
     if (currentStage < TOTAL_STAGES && unlockedStage <= currentStage) unlockedStage = currentStage + 1;
     playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
     playerHP = playerMaxHP;
@@ -433,74 +407,64 @@ retreatBtn.addEventListener('click', ()=>{
 /* -------------------- attack minigame (timing) -------------------- */
 let timing = {
   running: false,
-  dir: 1,
   pos: 0, // 0..1
-  speed: 1.6, // cycles per second across the bar
-  sweetLeft: 0.35, sweetWidth: 0.25 // percent range of sweet spot (can be modified by dcCount)
+  speed: 1.6,
+  sweetLeft: 0.25, sweetWidth: 0.18
 };
 
 function startTimingMinigame(){
   if (!bossAlive) { safeLog('الان باس نیست.'); return; }
   if (timing.running) return;
-  // adjust sweet zone by dcCount? make easier slightly with DC
+
+  // prepare sweet zone and pointer
   const baseWidth = 0.18;
   timing.sweetWidth = Math.min(0.45, baseWidth + dcCount * 0.02);
-  timing.sweetLeft = 0.25 + (Math.random() * 0.5 - 0.15);
+  timing.sweetLeft = Math.max(0.08, Math.min(0.78, 0.25 + (Math.random() * 0.5 - 0.15)));
   timing.pos = 0;
-  timing.dir = 1;
   timing.running = true;
   timing.startTime = performance.now();
   timingUI.style.display = 'block';
   timingUI.setAttribute('aria-hidden','false');
-  // pause spawning for short moment so player can focus
+
+  // visually update sweet zone
+  const parentWidth = timingUI.clientWidth || 300;
+  sweetZoneEl.style.left = (timing.sweetLeft * 100) + '%';
+  sweetZoneEl.style.width = (timing.sweetWidth * 100) + '%';
+
+  // pause spawning while focusing on minigame
   const hadSpawn = !!spawnIntervalId;
   if (spawnIntervalId){ stopSpawningBullets(); }
-  // animate pointer
-  function step(){
-    if (!timing.running) return;
-    const now = performance.now();
-    const elapsed = (now - timing.startTime) / 1000;
-    // pos oscillates 0..1..0 using sin
-    timing.pos = (Math.sin(elapsed * Math.PI * timing.speed - Math.PI/2) + 1) / 2;
-    // update pointer position DOM
-    const parentWidth = timingUI.clientWidth;
-    const px = timing.pos * parentWidth;
-    pointerEl.style.left = px + 'px';
-    // stop automatically if 3.2s passed
-    if (elapsed > 3.2){
-      // auto-fail (weak hit)
-      finishTiming(false);
-      if (hadSpawn) startSpawningBullets(currentStage);
-      return;
-    }
-    requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
 
-  // helper to finish
+  // define listeners in outer scope so we can remove them reliably
+  let onKey = null;
+  let clickHandler = null;
+
   function finishTiming(userPressed){
     if (!timing.running) return;
     timing.running = false;
     timingUI.style.display = 'none';
     timingUI.setAttribute('aria-hidden','true');
 
-    // compute hit quality
+    // remove listeners (safe even if not attached)
+    window.removeEventListener('keydown', onKey);
+    attackBtn.removeEventListener('click', clickHandler);
+
+    // compute quality
+    const now = performance.now();
+    const elapsed = (now - timing.startTime) / 1000;
+    // use current timing.pos (already updated)
     const winPos = timing.pos;
     const left = timing.sweetLeft;
     const right = timing.sweetLeft + timing.sweetWidth;
-    let quality = 0; // 0 fail, 1 ok, 2 great, 3 perfect
+    let quality = 0;
     if (winPos >= left && winPos <= right){
-      // how close to center
       const center = (left + right)/2;
-      const dist = Math.abs(winPos - center) / (timing.sweetWidth/2); // 0..1
-      if (dist < 0.18) quality = 3;
-      else if (dist < 0.45) quality = 2;
-      else quality = 1;
+      const dist = Math.abs(winPos - center) / (timing.sweetWidth/2);
+      quality = (dist < 0.18) ? 3 : (dist < 0.45 ? 2 : 1);
     } else {
       quality = 0;
     }
 
-    // damage mapping
     let baseDamage;
     if (quality === 3) baseDamage = Math.round(45 + Math.random()*12);
     else if (quality === 2) baseDamage = Math.round(28 + Math.random()*10);
@@ -515,10 +479,9 @@ function startTimingMinigame(){
     safeLog('تو حمله زدی — کیفیت: ' + (['Fail','OK','Great','Perfect'][quality]) + ' | ' + dmg + ' دمیج — +' + reward + ' سکه');
     updateUI();
 
-    // resume spawn after short delay if it was paused
+    // resume spawn if needed
     setTimeout(()=>{ if (hadSpawn && bossAlive) startSpawningBullets(currentStage); }, 300);
 
-    // if boss died by this hit
     if (bossHP <= 0){
       bossHP = 0;
       updateUI();
@@ -526,23 +489,43 @@ function startTimingMinigame(){
     }
   }
 
-  // attach a one-time keypress for space/enter or attackBtn click
-  function onKey(e){
+  // pointer animation loop
+  function step(){
+    if (!timing.running) return;
+    const now = performance.now();
+    const elapsed = (now - timing.startTime) / 1000;
+    timing.pos = (Math.sin(elapsed * Math.PI * timing.speed - Math.PI/2) + 1) / 2;
+    const parentW = timingUI.clientWidth || parentWidth;
+    const px = timing.pos * parentW;
+    pointerEl.style.left = px + 'px';
+
+    if (elapsed > 3.2){
+      // auto-fail
+      finishTiming(false);
+      return;
+    }
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+
+  // listeners (defined as variables so they can be removed by finishTiming)
+  onKey = function(e){
+    // prevent page scroll with space
+    if (e.key === ' ' || e.key === 'Spacebar') { e.preventDefault(); }
     if (!timing.running) return;
     if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter'){
       finishTiming(true);
-      window.removeEventListener('keydown', onKey);
     }
-  }
+  };
   window.addEventListener('keydown', onKey);
-  // also attach attackBtn click to confirm
-  const clickHandler = ()=>{ finishTiming(true); attackBtn.removeEventListener('click', clickHandler); };
+
+  clickHandler = function(){ if (timing.running) finishTiming(true); };
   attackBtn.addEventListener('click', clickHandler);
 }
 
 /* -------------------- input: keyboard & touch drag -------------------- */
 const keys = {};
-window.addEventListener('keydown', (e)=>{ keys[e.key] = true; if (timing.running && (e.key===' '||e.key==='Enter')) { /* handled in timing */ }});
+window.addEventListener('keydown', (e)=>{ keys[e.key] = true; });
 window.addEventListener('keyup', (e)=>{ keys[e.key] = false; });
 
 let lastMoveTime = performance.now();
@@ -566,13 +549,24 @@ function handlePlayerMovement(){
 }
 function clampPlayerToCanvas(){
   const margin = 6;
-  player.x = Math.max(margin, Math.min(canvas.width - margin - 160, player.x)); // keep player away from boss area on right
+  player.x = Math.max(margin, Math.min(canvas.width - margin - 160, player.x));
   player.y = Math.max(margin, Math.min(canvas.height - margin, player.y));
 }
 
 /* touch drag */
 let touchActive = false;
 function setupTouchDrag(){
+  function moveFromEvent(e){
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : null);
+    const clientX = touch ? touch.clientX : (e.clientX);
+    const clientY = touch ? touch.clientY : (e.clientY);
+    if (clientX == null) return;
+    const x = (clientX - rect.left) * (canvas.width / rect.width);
+    const y = (clientY - rect.top) * (canvas.height / rect.height);
+    player.x = x; player.y = y;
+    clampPlayerToCanvas();
+  }
   function onStart(e){
     touchActive = true;
     isDragging = true;
@@ -586,17 +580,6 @@ function setupTouchDrag(){
     touchActive = false;
     isDragging = false;
   }
-  function moveFromEvent(e){
-    const rect = canvas.getBoundingClientRect();
-    const touch = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : null);
-    const clientX = touch ? touch.clientX : (e.clientX);
-    const clientY = touch ? touch.clientY : (e.clientY);
-    if (!clientX) return;
-    const x = (clientX - rect.left) * (canvas.width / rect.width);
-    const y = (clientY - rect.top) * (canvas.height / rect.height);
-    player.x = x; player.y = y;
-    clampPlayerToCanvas();
-  }
   canvas.addEventListener('touchstart', onStart, {passive:false});
   canvas.addEventListener('touchmove', onMove, {passive:false});
   canvas.addEventListener('touchend', onEnd, {passive:false});
@@ -604,20 +587,16 @@ function setupTouchDrag(){
   window.addEventListener('mousemove', (e)=>{ if (isDragging) moveFromEvent(e); });
   window.addEventListener('mouseup', ()=>{ isDragging=false; touchActive=false; });
 }
-function hideTouchDrag(){
-  // nothing to remove (listeners are harmless). we keep them.
-}
+function hideTouchDrag(){ /* listeners harmless to keep */ }
 
 /* -------------------- buy data center & balance -------------------- */
 function buyDataCenter(){
   if (coins < dcCost){ safeLog('سکه کافی نداری'); return; }
   coins -= dcCost; dcCount += 1;
   dcCost = Math.min(999999999, Math.round(dcCost * 1.6));
-  // increase max HP
   const oldMax = playerMaxHP;
   playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
   const hpIncrease = playerMaxHP - oldMax;
-  // restore a portion of the gained HP to current HP to give satisfying feel (70%)
   playerHP = Math.min(playerMaxHP, playerHP + Math.round(hpIncrease * 0.7));
   safeLog('دیتاسنتر خریدی — +25 Max HP و HP فعلی افزایش یافت');
   updateUI();
@@ -654,31 +633,24 @@ resetBtn.addEventListener('click', ()=>{ if(confirm('میخوای ذخیره ر�
 
 /* init */
 function init(){
-  // canvas scaling for high-DPI
   function resizeCanvas(){
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
     canvas.width = Math.max(320, Math.floor(rect.width * dpr));
-    canvas.height = Math.max(180, Math.floor(rect.height * dpr * 0.5 + 180)); // keep decent aspect
-    // ensure player inside
+    canvas.height = Math.max(180, Math.floor(rect.height * dpr * 0.5 + 180));
     clampPlayerToCanvas();
   }
-  // call resize once after layout
   setTimeout(()=>{ resizeCanvas(); player.x = 120; player.y = canvas.height/2; updateUI(); render(); }, 50);
   window.addEventListener('resize', ()=>{ resizeCanvas(); });
 
   setupTouchDrag();
-  handlePlayerMovement(); // starts RAF for movement handler
+  handlePlayerMovement();
   updateUI();
   safeLog('سیستم مبارزه Undertale-style آماده است — مرحله رو انتخاب کن و بجنگ!');
 }
 
-// end fight on page unload
 window.addEventListener('beforeunload', ()=>{ stopSpawningBullets(); if (rafId) cancelAnimationFrame(rafId); });
-
-/* expose debug */
 window.__hc = { startStage, buyDataCenter, getState: ()=>({coins,dcCount,dcCost,unlockedStage,playerHP,playerMaxHP,bossHP,currentStage}) };
-
 init();
 </script>
 </body>
