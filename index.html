@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Happy Coin — Boss Attacks (Advanced)</title>
+<title>Happy Coin — Attacks w/ Cooldown & Joystick</title>
 <style>
   :root{
-    --bg1:#070709; --bg2:#121217; --accent:#00ffea; --danger:#ff004c; --purple:#7d00b2;
+    --bg1:#070709; --bg2:#121217; --accent:#00ffea; --danger:#ff4c6b; --muted:#222;
   }
   *{box-sizing:border-box;font-family:Tahoma, Arial, sans-serif}
   body{
@@ -14,19 +14,20 @@
     color:#e9eef0; display:flex; flex-direction:column; align-items:center; gap:12px; padding:18px;
   }
   header{width:100%; max-width:1100px; display:flex; justify-content:space-between; align-items:center; gap:8px}
-  h1{color:var(--accent); font-size:1.4rem; margin:0}
+  h1{color:var(--accent); font-size:1.3rem; margin:0}
   .top-stats{display:flex; gap:10px; align-items:center; font-size:0.95rem}
   .chip{background:#0e0e10;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
   main{width:100%; max-width:1100px; display:flex; flex-direction:column; align-items:center; gap:12px}
   .card{width:100%; background:linear-gradient(180deg,#0b0b0d, #101012); border-radius:12px; padding:14px; box-shadow:0 6px 20px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.03)}
   .battle-area{display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap; width:100%}
-  .arena{background:linear-gradient(180deg,#0d0d0f,#0b0b0d); border-radius:10px; padding:12px; display:flex; flex-direction:column; align-items:center; width:100%; max-width:720px}
+  .arena{background:linear-gradient(180deg,#0d0d0f,#0b0b0d); border-radius:10px; padding:12px; display:flex; flex-direction:column; align-items:center; width:100%; max-width:720px; position:relative}
   canvas{background:transparent; border-radius:8px; display:block; touch-action: none;}
   .hud{width:100%; display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:8px}
   .controls{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
   .btn{background:var(--accent); color:#001; border:none; padding:10px 14px; border-radius:8px; font-weight:700; cursor:pointer}
   .btn.secondary{background:#222; color:#eaeaea; border:1px solid rgba(255,255,255,0.03)}
   .btn.ghost{background:transparent; border:1px dashed rgba(255,255,255,0.04)}
+  .btn[disabled]{opacity:0.45; cursor:not-allowed}
   .status{font-size:0.95rem}
   .log{background:#0b0b0d; width:100%; max-width:980px; padding:12px; border-radius:10px; font-size:0.9rem; max-height:220px; overflow:auto; border:1px solid rgba(255,255,255,0.02)}
   .small{font-size:0.87rem; opacity:0.9}
@@ -34,17 +35,21 @@
   .timing-ui{width:100%; max-width:400px; height:36px; background:#111; border-radius:8px; border:1px solid rgba(255,255,255,0.04); position:relative; overflow:hidden; margin-top:10px}
   .timing-bar-pointer{position:absolute; top:0; bottom:0; width:6px; background:var(--accent); transform:translateX(-50%); left:0}
   .timing-bar-sweet{position:absolute; top:6px; bottom:6px; height:calc(100% - 12px); border-radius:6px; background:rgba(0,255,170,0.18); left:40%; width:20%;}
-  .arena-top{display:flex; gap:12px; width:100%; justify-content:space-between; align-items:center; margin-bottom:6px}
-  .hp{text-align:center}
-  .boss-warning{position:absolute; left:50%; transform:translateX(-50%); top:10px; padding:8px 12px; background:rgba(255,0,70,0.14); border-radius:8px; border:1px solid rgba(255,0,70,0.2); color:#ffd0d9; display:none; z-index:30}
-  @media (max-width:720px){
-    .arena{max-width:100%}
-  }
+  .attack-cooldown{position:relative; height:6px; background:rgba(255,255,255,0.04); border-radius:6px; margin-top:6px; overflow:hidden;}
+  .attack-cooldown > i{position:absolute; left:0; top:0; bottom:0; width:0%; background:linear-gradient(90deg,var(--accent),#7d00b2); transition:width 120ms linear;}
+  /* Joystick */
+  .joystick-wrap{position:fixed; left:14px; bottom:14px; width:120px; height:120px; border-radius:999px; z-index:80; display:flex; align-items:center; justify-content:center; touch-action:none}
+  .joy-base{width:120px;height:120px;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border:2px solid rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;opacity:0.95}
+  .joy-knob{width:48px;height:48px;border-radius:999px;background:var(--accent);box-shadow:0 6px 18px rgba(0,255,234,0.08);transform:translate(0,0);transition:transform 0s;}
+  .joy-label{position:absolute;left:14px;bottom:140px;color:#cfd8dc;font-size:0.8rem;opacity:0.95}
+  /* boss warning */
+  .boss-warning{position:absolute; left:50%; transform:translateX(-50%); top:12px; padding:8px 12px; background:rgba(255,0,70,0.12); border-radius:8px; border:1px solid rgba(255,0,70,0.18); color:#ffd0d9; display:none; z-index:30}
+  @media (max-width:720px){ .joystick-wrap{left:10px;bottom:10px; width:100px;height:100px} .joy-base{width:100px;height:100px} .joy-knob{width:44px;height:44px} }
 </style>
 </head>
 <body>
 <header>
-  <h1>Happy Coin: Boss Attack — Advanced</h1>
+  <h1>Happy Coin — Cooldown & Joystick</h1>
   <div class="top-stats">
     <div class="chip">رمز ارز: <strong id="coins">0</strong> 🪙</div>
     <div class="chip">دیتاسنتر: <strong id="dcCount">0</strong></div>
@@ -57,30 +62,32 @@
     <div class="battle-area">
       <div class="arena" id="arenaContainer" aria-live="polite" style="position:relative">
         <div class="boss-warning" id="bossWarning">!حمله ویژه در راه است — جاخالی بده</div>
-        <div class="arena-top">
+        <div class="arena-top" style="width:100%;display:flex;justify-content:space-between">
           <div class="hp">باس: <span id="bossHPText">HP: 300</span></div>
           <div class="hp">تو: <span id="playerHPText">HP: 100</span></div>
         </div>
 
-        <!-- canvas for bullets and player -->
         <canvas id="arenaCanvas" width="720" height="360" style="max-width:100%; width:100%; height:auto;"></canvas>
 
         <div class="hud">
-          <div class="controls">
-            <button class="btn" id="attackBtn">حمله (شروع مینی‌گیم)</button>
-            <button class="btn secondary" id="actBtn">Act</button>
-            <button class="btn secondary" id="buyDCBtn">خرید دیتاسنتر</button>
+          <div class="controls" style="align-items:flex-end">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <button class="btn" id="attackBtn">حمله (Space)</button>
+              <div class="attack-cooldown" title="کول‌داون حمله"><i id="attackCooldownFill" style="width:0%"></i></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <button class="btn secondary" id="actBtn">Act</button>
+              <button class="btn secondary" id="buyDCBtn">خرید دیتاسنتر</button>
+            </div>
             <button class="btn ghost" id="retreatBtn" style="display:none">فرار</button>
           </div>
           <div class="status"><span id="statusText">آماده</span> — مرحله: <strong id="currentStageText">—</strong></div>
         </div>
 
-        <!-- timing minigame -->
         <div id="timingUI" class="timing-ui" style="display:none" aria-hidden="true">
           <div id="sweetZone" class="timing-bar-sweet"></div>
           <div id="pointer" class="timing-bar-pointer" style="left:0px"></div>
         </div>
-
       </div>
 
       <div style="flex:1; max-width:360px;">
@@ -90,13 +97,13 @@
             <div class="small">فاز: <span id="bossPhaseText">1</span></div>
           </div>
           <div style="height:8px"></div>
-          <div class="log" id="log">> خوش آمدی! مرحله‌ای انتخاب کن و بجنگ.</div>
+          <div class="log" id="log">> خوش آمدی! با جوی‌استیک جاخالی بده و با Space حمله کن.</div>
         </div>
 
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
             <div>کنترل‌ها</div>
-            <div class="small">حرکت: فلش‌ها یا درگ / حمله: دکمه یا Space</div>
+            <div class="small">حرکت: فلش‌ها یا جوی‌استیک / حمله: Space یا دکمه</div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn secondary" id="openStagesBtn">انتخاب مرحله</button>
@@ -108,7 +115,14 @@
   </section>
 </main>
 
-<!-- Stages modal (simple) -->
+<!-- joystick -->
+<div class="joystick-wrap" id="joystickWrap" aria-hidden="false">
+  <div class="joy-base" id="joyBase">
+    <div class="joy-knob" id="joyKnob" role="slider" aria-label="جوی‌استیک حرکت"></div>
+  </div>
+</div>
+
+<!-- Stages modal -->
 <div id="stageModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;padding:18px;z-index:60">
   <div style="background:linear-gradient(180deg,#0b0b0d,#0f0f11);padding:14px;border-radius:10px;max-width:720px;width:100%;border:1px solid rgba(255,255,255,0.03)">
     <h3 style="margin:0 0 8px 0">انتخاب مرحله</h3>
@@ -118,52 +132,27 @@
 </div>
 
 <footer style="width:100%;max-width:1100px;margin-top:12px;text-align:center;color:#cfd8dc">
-  <div>نسخه آزمایشی — Advanced Boss Patterns</div>
+  <div>نسخه آزمایشی — Cooldown + Joystick</div>
   <div class="made-by">ساخته شده توسط Rob Lucci</div>
 </footer>
 
 <script>
-/* ================= Audio (Web Audio API SFX) ================= */
+/* ---------------- Audio (WebAudio helper) ---------------- */
 let audioCtx = null;
-function initAudioContext(){
-  if (audioCtx) return;
-  try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ audioCtx = null; }
-}
-function ensureAudioResume(){
-  if (!audioCtx) initAudioContext();
-  if (!audioCtx) return;
-  if (audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
-}
-function playBeep(freq, duration=0.12, type='sine', volume=0.12){
-  if (!audioCtx) initAudioContext();
-  if (!audioCtx) return;
-  const now = audioCtx.currentTime;
-  const o = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
-  o.type = type;
-  o.frequency.value = freq;
-  g.gain.value = volume;
-  o.connect(g); g.connect(audioCtx.destination);
-  g.gain.setValueAtTime(volume, now);
-  g.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-  o.start(now); o.stop(now + duration + 0.02);
-}
+function initAudioContext(){ if (audioCtx) return; try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ audioCtx = null; } }
+function ensureAudioResume(){ if (!audioCtx) initAudioContext(); if (!audioCtx) return; if (audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{}); }
+function playBeep(freq, duration=0.12, type='sine', volume=0.12){ if (!audioCtx) initAudioContext(); if (!audioCtx) return; const now = audioCtx.currentTime; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type = type; o.frequency.value = freq; g.gain.value = volume; o.connect(g); g.connect(audioCtx.destination); g.gain.setValueAtTime(volume, now); g.gain.exponentialRampToValueAtTime(0.0001, now + duration); o.start(now); o.stop(now + duration + 0.02); }
 function playAttack(){ ensureAudioResume(); playBeep(640,0.08,'sawtooth',0.12); setTimeout(()=>playBeep(940,0.06,'sine',0.10),80); }
 function playHurt(){ ensureAudioResume(); playBeep(160,0.12,'square',0.16); setTimeout(()=>playBeep(220,0.09,'sawtooth',0.08),40); }
 function playWin(){ ensureAudioResume(); const now = audioCtx.currentTime; const freqs=[440,660,880]; const gain = audioCtx.createGain(); gain.gain.value=0.14; gain.connect(audioCtx.destination); const oscs=freqs.map(f=>{const o=audioCtx.createOscillator(); o.type='sine'; o.frequency.value=f; o.connect(gain); return o;}); oscs.forEach(o=>o.start(now)); gain.gain.setValueAtTime(0.14, now); gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.7); oscs.forEach(o=>o.stop(now + 0.72)); }
-// boss-specific SFX
-function playBossCharge(){ ensureAudioResume(); playBeep(220,0.5,'sawtooth',0.12); setTimeout(()=>playBeep(300,0.3,'sine',0.08),200); }
-function playBossAttack(){ ensureAudioResume(); playBeep(420,0.12,'square',0.14); playBeep(320,0.08,'sawtooth',0.08); }
-
-/* resume audio on first interaction */
 (function attachAutoResume(){ const resume = ()=>{ ensureAudioResume(); document.removeEventListener('pointerdown', resume); document.removeEventListener('keydown', resume); }; document.addEventListener('pointerdown', resume); document.addEventListener('keydown', resume); })();
 
-/* ================= helpers storage & safe log ================= */
+/* ---------------- storage & log ---------------- */
 function readNumber(k,f){ try{ const v=localStorage.getItem(k); if(v===null) return f; const n=Number(v); return isNaN(n)?f:n; }catch(e){return f;} }
 function saveNumber(k,v){ try{ localStorage.setItem(k,String(v)); }catch(e){} }
 function safeLog(msg){ const el=document.getElementById('log'); const esc=String(msg).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); el.innerHTML = '> ' + esc + '<br>' + el.innerHTML; }
 
-/* -------------------- game state -------------------- */
+/* ---------------- game state (based on prev advanced version) ---------------- */
 const TOTAL_STAGES = 34;
 let coins = readNumber('hc_coins', 0);
 let dcCount = readNumber('hc_dcCount', 0);
@@ -177,23 +166,18 @@ let playerHP = playerMaxHP;
 let currentStage = 0;
 let bossMaxHP = 300;
 let bossHP = bossMaxHP;
-let bossAttackBase = 8;
 
 let bossAlive = false;
 let spawnIntervalId = null;
 let rafId = null;
-let bullets = []; // projectile list
-let isDragging = false;
+let bullets = [];
 
-/* new boss behavior state */
-let bossPhase = 1; // 1..4
+let bossPhase = 1;
 let spiralOffset = 0;
 let ultimateUsed = false;
 let ultimateActive = false;
-let bossPhaseTextEl = document.getElementById('bossPhaseText');
-const bossWarningEl = document.getElementById('bossWarning');
 
-/* DOM refs */
+/* DOM */
 const coinsEl = document.getElementById('coins');
 const dcCountEl = document.getElementById('dcCount');
 const dcCostEl = document.getElementById('dcCost');
@@ -201,10 +185,13 @@ const bossHPText = document.getElementById('bossHPText');
 const playerHPText = document.getElementById('playerHPText');
 const statusText = document.getElementById('statusText');
 const currentStageText = document.getElementById('currentStageText');
+const bossPhaseTextEl = document.getElementById('bossPhaseText');
+const bossWarningEl = document.getElementById('bossWarning');
 
 const canvas = document.getElementById('arenaCanvas');
 const ctx = canvas.getContext('2d');
 const attackBtn = document.getElementById('attackBtn');
+const attackCooldownFill = document.getElementById('attackCooldownFill');
 const buyDCBtn = document.getElementById('buyDCBtn');
 const retreatBtn = document.getElementById('retreatBtn');
 const openStagesBtn = document.getElementById('openStagesBtn');
@@ -217,16 +204,19 @@ const sweetZoneEl = document.getElementById('sweetZone');
 const resetBtn = document.getElementById('resetBtn');
 
 /* player */
-let player = {
-  x: 120,
-  y: canvas.height / 2,
-  size: 18,
-  speed: 300,
-  vx: 0,
-  vy: 0
-};
+let player = { x:120, y: canvas.height/2, size:18, speed:300, vx:0, vy:0 };
 
-/* formulas */
+/* movement control: keyboard + joystick */
+const keys = {};
+let joystickActive = false;
+let joyDir = { x:0, y:0 };
+
+/* cooldown */
+let attackReady = true;
+const ATTACK_COOLDOWN_MS = 1300; // feel free to tune
+let attackCooldownTimer = null;
+
+/* difficulty helpers */
 function damageMultiplier(){ return 1 + dcCount * 0.35; }
 function computeBossHPForStage(stage){ return Math.round(300 * Math.pow(1.5, stage-1)); }
 function computeBossAttackBase(stage){ return Math.round(8 * Math.pow(1.22, stage-1)); }
@@ -248,25 +238,12 @@ function updateUI(){
 
 /* projectiles */
 function spawnBulletAt(angle, speed, size=8, color='rgba(255,80,80,0.95)'){
-  const spawnX = canvas.width - 60;
-  const spawnY = canvas.height / 2;
-  bullets.push({
-    x: spawnX,
-    y: spawnY,
-    vx: Math.cos(angle) * speed,
-    vy: Math.sin(angle) * speed,
-    r: size,
-    color
-  });
+  const spawnX = canvas.width - 60, spawnY = canvas.height / 2;
+  bullets.push({ x:spawnX, y:spawnY, vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed, r:size, color });
 }
-function spawnBulletFrom(x,y,angle,speed,size=8,color='rgba(255,80,80,0.95)'){
-  bullets.push({ x, y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed, r:size, color });
-}
-function cleanupBullets(){
-  bullets = bullets.filter(b => b.x + b.r > -50 && b.x - b.r < canvas.width + 50 && b.y + b.r > -50 && b.y - b.r < canvas.height + 50);
-}
+function cleanupBullets(){ bullets = bullets.filter(b => b.x + b.r > -50 && b.x - b.r < canvas.width + 50 && b.y + b.r > -50 && b.y - b.r < canvas.height + 50); }
 
-/* collision */
+/* collisions */
 function rectCircleColliding(circle, rect){
   const distX = Math.abs(circle.x - (rect.x + rect.w/2));
   const distY = Math.abs(circle.y - (rect.y + rect.h/2));
@@ -274,11 +251,11 @@ function rectCircleColliding(circle, rect){
   if (distY > (rect.h/2 + circle.r)) return false;
   if (distX <= (rect.w/2)) return true;
   if (distY <= (rect.h/2)) return true;
-  const dx = distX - rect.w/2; const dy = distY - rect.h/2;
+  const dx = distX - rect.w/2, dy = distY - rect.h/2;
   return (dx*dx + dy*dy <= (circle.r*circle.r));
 }
 
-/* render & physics loop */
+/* render + physics */
 let lastFrame = performance.now();
 function rafLoop(now){
   const dt = (now - lastFrame) / 1000;
@@ -288,11 +265,31 @@ function rafLoop(now){
   rafId = requestAnimationFrame(rafLoop);
 }
 function updatePhysics(dt){
-  for(const b of bullets){ b.x += b.vx * dt; b.y += b.vy * dt; }
+  // update bullets
+  for (const b of bullets){ b.x += b.vx * dt; b.y += b.vy * dt; }
   cleanupBullets();
 
+  // move player from keys or joystick (joystick overrides keys when active)
+  if (joystickActive){
+    player.vx = joyDir.x * player.speed;
+    player.vy = joyDir.y * player.speed;
+    player.x += player.vx * dt;
+    player.y += player.vy * dt;
+  } else {
+    // keyboard movement
+    let dx=0, dy=0;
+    if (keys['ArrowLeft']||keys['a']||keys['A']) dx -= 1;
+    if (keys['ArrowRight']||keys['d']||keys['D']) dx += 1;
+    if (keys['ArrowUp']||keys['w']||keys['W']) dy -= 1;
+    if (keys['ArrowDown']||keys['s']||keys['S']) dy += 1;
+    const len = Math.hypot(dx,dy);
+    if (len > 0){ dx /= len; dy /= len; player.vx = dx * player.speed; player.vy = dy * player.speed; player.x += player.vx * dt; player.y += player.vy * dt; } else { player.vx = 0; player.vy = 0; }
+  }
+  clampPlayerToCanvas();
+
+  // collisions bullets vs player
   const playerRect = { x: player.x - player.size/2, y: player.y - player.size/2, w: player.size, h: player.size };
-  for (let i = bullets.length - 1; i >= 0; i--){
+  for (let i=bullets.length-1;i>=0;i--){
     if (rectCircleColliding(bullets[i], playerRect)){
       const dmg = Math.max(1, Math.round(6 + Math.random()*6));
       playerHP -= dmg;
@@ -307,24 +304,15 @@ function updatePhysics(dt){
 function render(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   const bossX = canvas.width - 60, bossY = canvas.height/2;
-  // boss core
-  ctx.beginPath();
-  ctx.fillStyle = (ultimateActive ? 'rgba(255,40,80,0.16)' : 'rgba(125,0,178,0.12)');
-  ctx.arc(bossX, bossY, 36 + (bossPhase-1)*2, 0, Math.PI*2);
-  ctx.fill();
-  ctx.closePath();
-  // boss eyes
+  ctx.beginPath(); ctx.fillStyle = (ultimateActive ? 'rgba(255,40,80,0.16)' : 'rgba(125,0,178,0.12)'); ctx.arc(bossX, bossY, 36 + (bossPhase-1)*2, 0, Math.PI*2); ctx.fill(); ctx.closePath();
   ctx.beginPath(); ctx.fillStyle = '#ff6b6b'; ctx.arc(bossX - 12, bossY - 8, 6, 0, Math.PI*2); ctx.arc(bossX + 12, bossY - 8, 6, 0, Math.PI*2); ctx.fill(); ctx.closePath();
 
-  // bullets
-  for(const b of bullets){ ctx.beginPath(); ctx.fillStyle = b.color; ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill(); ctx.closePath(); }
+  for (const b of bullets){ ctx.beginPath(); ctx.fillStyle = b.color; ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill(); ctx.closePath(); }
 
-  // player
   ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(Math.sin(performance.now()/200)*0.05); ctx.fillStyle = '#ffd59a'; const s = player.size; ctx.fillRect(-s/2, -s/2, s, s); ctx.restore();
 }
 
-/* -------------------- boss patterns & controller -------------------- */
-let spawnTickCount = 0;
+/* boss logic (patterns simplified for brevity) */
 function updateBossPhase(){
   if (!bossMaxHP) return;
   const pct = bossHP / bossMaxHP;
@@ -332,328 +320,318 @@ function updateBossPhase(){
   if (pct <= 0.25) newPhase = 4;
   else if (pct <= 0.5) newPhase = 3;
   else if (pct <= 0.75) newPhase = 2;
-  else newPhase = 1;
   if (newPhase !== bossPhase){
     bossPhase = newPhase;
     safeLog('باس وارد فاز ' + bossPhase + ' شد!');
-    // small audio hint
-    playBossCharge();
-    // make spawning slightly faster on higher phases by restarting controller
-    if (spawnIntervalId) { stopSpawningBullets(); startSpawningBullets(currentStage); }
+    playBeep(240 + bossPhase*40, 0.32, 'sawtooth', 0.12);
+    if (spawnIntervalId){ stopSpawningBullets(); startSpawningBullets(currentStage); }
   }
   updateUI();
 }
 
-/* pattern helpers */
-function spiralPattern(stage, count=10, speed=180, rotations=1, color='rgba(220,60,220,0.95)'){
-  // spawn count bullets around circle offset by spiralOffset
+function spiralPattern(stage,count=10,speed=180,color='rgba(220,60,220,0.95)'){
   for (let i=0;i<count;i++){
-    const angle = spiralOffset + (i / count) * Math.PI * 2;
-    const s = 6;
-    spawnBulletAt(angle, speed, s, color);
+    const angle = spiralOffset + (i/count) * Math.PI*2;
+    spawnBulletAt(angle, speed, 6, color);
   }
-  spiralOffset += 0.28 + bossPhase * 0.05; // rotate offset for next spiral
-  playBossAttack();
+  spiralOffset += 0.28 + bossPhase*0.05;
+  playBeep(380,0.08,'square',0.12);
 }
-function burstPattern(stage, pieces=6, spread=0.9, speed=200){
-  const baseAngle = Math.atan2((canvas.height/2) - (canvas.height/2), (canvas.width - 60) - (canvas.width - 60)); // just placeholder
-  // aim roughly to player with spread
+function burstPattern(stage,pieces=6,spread=0.9,speed=200){
   const centerAngle = Math.atan2(player.y - canvas.height/2, player.x - (canvas.width - 60));
   for (let i=0;i<pieces;i++){
     const angle = centerAngle + (i - (pieces-1)/2) * spread;
     spawnBulletAt(angle, speed + i*8, 7);
   }
-  playBossAttack();
+  playBeep(360,0.09,'sawtooth',0.12);
 }
-function wavePattern(stage, rows=5, speed=160, color='rgba(255,120,60,0.95)'){
-  // spawn bullets across vertical stripes moving left with slight vy
+function wavePattern(stage,rows=5,speed=160,color='rgba(255,120,60,0.95)'){
   const gap = (canvas.height - 80) / (rows - 1 || 1);
   for (let r=0;r<rows;r++){
     const y = 40 + r * gap;
-    const vx = -speed;
-    bullets.push({ x: canvas.width + 20, y, vx: vx * (0.9 + Math.random()*0.2), vy: Math.sin(r + Date.now()/500)*12 * 0.02, r:6, color });
+    bullets.push({ x: canvas.width + 20, y, vx: -speed * (0.9 + Math.random()*0.2), vy: Math.sin(r + Date.now()/500)*6 * 0.02, r:6, color });
   }
-  playBossAttack();
+  playBeep(320,0.06,'sine',0.10);
 }
-function aimedPredictive(stage, speed=220){
-  // predict player's future position using last velocity
+function aimedPredictive(stage,speed=220){
   const sx = canvas.width - 60, sy = canvas.height/2;
-  // predict t as distance / speed
-  const dx = player.x - sx, dy = player.y - sy;
-  const dist = Math.hypot(dx,dy);
-  const t = Math.max(0.2, dist / speed); // seconds
+  const dx = player.x - sx, dy = player.y - sy; const dist = Math.hypot(dx,dy);
+  const t = Math.max(0.16, dist / speed);
   const predictedX = player.x + (player.vx || 0) * t * 1.2;
   const predictedY = player.y + (player.vy || 0) * t * 1.0;
   const angle = Math.atan2(predictedY - sy, predictedX - sx);
   spawnBulletAt(angle, speed * (0.95 + Math.random()*0.2), 8, 'rgba(255,200,100,0.95)');
-  playBossAttack();
+  playBeep(400,0.06,'square',0.11);
 }
 
-/* controller: choose pattern based on phase */
 function chooseAndExecutePattern(stage){
   if (!bossAlive || ultimateActive) return;
-  spawnTickCount++;
-  // probabilities change by phase
   const r = Math.random();
   if (bossPhase === 1){
-    if (r < 0.5) aimedPredictive(stage, 160 + Math.random()*40);
-    else if (r < 0.8) burstPattern(stage, 4, 0.9, 170);
-    else wavePattern(stage, 3, 150);
+    if (r < 0.5) aimedPredictive(stage,160 + Math.random()*40);
+    else if (r < 0.8) burstPattern(stage,4,0.9,170);
+    else wavePattern(stage,3,150);
   } else if (bossPhase === 2){
-    if (r < 0.35) aimedPredictive(stage, 180 + Math.random()*50);
-    else if (r < 0.7) burstPattern(stage, 5, 0.8, 180);
-    else spiralPattern(stage, 10 + bossPhase*2, 180 + bossPhase*10);
+    if (r < 0.35) aimedPredictive(stage,180 + Math.random()*50);
+    else if (r < 0.7) burstPattern(stage,5,0.8,180);
+    else spiralPattern(stage,10 + bossPhase*2,180);
   } else if (bossPhase === 3){
-    if (r < 0.25) spiralPattern(stage, 12 + bossPhase*2, 200 + bossPhase*10);
-    else if (r < 0.6) burstPattern(stage, 6, 0.7, 200);
-    else wavePattern(stage, 5 + bossPhase, 190);
+    if (r < 0.25) spiralPattern(stage,12 + bossPhase*2,200);
+    else if (r < 0.6) burstPattern(stage,6,0.7,200);
+    else wavePattern(stage,5 + bossPhase,190);
   } else {
-    // phase 4: aggressive + chance -> ultimate
-    if (!ultimateUsed && Math.random() < 0.06){
-      triggerUltimate(stage);
-      return;
-    }
-    if (r < 0.3) spiralPattern(stage, 16, 220);
-    else if (r < 0.65) burstPattern(stage, 8, 0.6, 220);
-    else wavePattern(stage, 6 + bossPhase, 210);
+    if (!ultimateUsed && Math.random() < 0.06){ triggerUltimate(stage); return; }
+    if (r < 0.3) spiralPattern(stage,16,220);
+    else if (r < 0.65) burstPattern(stage,8,0.6,220);
+    else wavePattern(stage,6 + bossPhase,210);
   }
 }
 
-/* ultimate attack */
+/* ultimate simplified */
 function triggerUltimate(stage){
   if (ultimateUsed || ultimateActive || !bossAlive) return;
-  ultimateActive = true;
-  ultimateUsed = true;
-  // telegraph
-  bossWarningEl.style.display = 'block';
-  playBossCharge();
-  safeLog('باس دارد بارگذاری می‌کند — حملهٔ نهایی در راه است!');
-  // pause normal spawn
+  ultimateActive = true; ultimateUsed = true;
+  bossWarningEl.style.display = 'block'; playBeep(180,0.45,'sawtooth',0.12); safeLog('باس در حال شارژ شات نهایی است!');
   stopSpawningBullets();
-  // after 900ms, heavy spiral for 2.2s
   setTimeout(()=>{
-    bossWarningEl.style.display = 'none';
-    playBossCharge();
-    const ultimateDuration = 2200;
-    const end = performance.now() + ultimateDuration;
-    // spawn dense spiral bursts every 120ms
+    bossWarningEl.style.display = 'none'; playBeep(240,0.24,'sine',0.12);
+    const ultimateDuration = 2200; const end = performance.now() + ultimateDuration;
     const ultInterval = setInterval(()=>{
       if (!ultimateActive) { clearInterval(ultInterval); return; }
-      // dense spiral + aimed bolts
-      spiralPattern(stage, 18, 260);
-      aimedPredictive(stage, 260);
-      // also small waves
-      wavePattern(stage, 6, 200, 'rgba(255,200,160,0.95)');
-      // slight damage to player on proximity? (handled by collisions)
-      if (performance.now() >= end) {
-        clearInterval(ultInterval);
-        ultimateActive = false;
-        // resume spawn
-        if (bossAlive) startSpawningBullets(stage);
-      }
+      spiralPattern(stage,18,260); aimedPredictive(stage,260); wavePattern(stage,6,200,'rgba(255,200,160,0.95)');
+      if (performance.now() >= end){ clearInterval(ultInterval); ultimateActive=false; if (bossAlive) startSpawningBullets(stage); }
     }, 120);
   }, 900);
 }
 
-/* spawn controller start/stop */
+/* spawn controller */
 function startSpawningBullets(stage){
   stopSpawningBullets();
-  // spawn interval shorter with stage and phase
   const base = Math.max(280, 900 - (stage-1)*26);
   const phaseMod = Math.max(1, 1.0 - (bossPhase-1)*0.08);
   const interval = Math.round(base * phaseMod);
-  spawnTickCount = 0;
   spawnIntervalId = setInterval(()=>{ chooseAndExecutePattern(stage); }, interval);
 }
 function stopSpawningBullets(){ if (spawnIntervalId){ clearInterval(spawnIntervalId); spawnIntervalId = null; } }
 
-/* -------------------- fight flow (start/end) -------------------- */
+/* start/end fight */
 function startStage(stage){
-  if (bossAlive) { safeLog('در حال مبارزه‌ای — اول تمومش کن یا فرار کن.'); return; }
+  if (bossAlive){ safeLog('الان در مبارزه‌ای — اول تمومش کن یا فرار کن.'); return; }
   currentStage = stage;
   bossMaxHP = computeBossHPForStage(stage);
   bossHP = bossMaxHP;
-  bossAttackBase = computeBossAttackBase(stage);
   playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
   playerHP = playerMaxHP;
   bossPhase = 1; ultimateUsed = false; ultimateActive = false;
-  bossAlive = true;
-  bullets = [];
+  bossAlive = true; bullets = [];
   safeLog('مرحله '+stage+' شروع شد — باس HP: ' + bossMaxHP);
-  statusText.innerText = 'مبارزه (مرحله '+stage+')';
-  retreatBtn.style.display = 'inline-block';
+  statusText.innerText = 'مبارزه (مرحله '+stage+')'; retreatBtn.style.display = 'inline-block';
   startSpawningBullets(stage);
   if (!rafId){ lastFrame = performance.now(); rafId = requestAnimationFrame(rafLoop); }
   updateUI();
 }
-
 function endFight(victory){
-  bossAlive = false;
-  stopSpawningBullets();
-  if (rafId){ cancelAnimationFrame(rafId); rafId = null; }
-  bullets = [];
-  retreatBtn.style.display = 'none';
-  timingUI.style.display = 'none';
-  timingUI.setAttribute('aria-hidden','true');
-  bossWarningEl.style.display = 'none';
-  ultimateActive = false;
-  if (victory){
-    playWin();
-    const reward = Math.round(100 * Math.max(1,currentStage) * (1 + dcCount*0.08));
-    coins += reward;
-    safeLog('تبریک! باس شکست خورد — +' + reward + ' سکه');
-    if (currentStage < TOTAL_STAGES && unlockedStage <= currentStage) unlockedStage = currentStage + 1;
-    playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
-    playerHP = playerMaxHP;
-    statusText.innerText = 'برنده شدی!';
-  } else {
-    const loss = Math.min(coins, Math.round(10 * Math.max(1,currentStage)));
-    coins -= loss;
-    safeLog('شکست خوردی — از دست دادی ' + loss + ' سکه');
-    playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
-    playerHP = Math.max(1, Math.round(playerMaxHP * 0.3));
-    statusText.innerText = 'شکست خوردی';
-  }
-  currentStage = 0;
-  updateUI();
+  bossAlive = false; stopSpawningBullets(); if (rafId){ cancelAnimationFrame(rafId); rafId=null; }
+  bullets = []; retreatBtn.style.display = 'none'; timingUI.style.display='none'; timingUI.setAttribute('aria-hidden','true'); bossWarningEl.style.display='none'; ultimateActive=false;
+  if (victory){ playWin(); const reward = Math.round(100 * Math.max(1,currentStage) * (1 + dcCount*0.08)); coins += reward; safeLog('تبریک! باس شکست خورد — +' + reward + ' سکه'); if (currentStage < TOTAL_STAGES && unlockedStage <= currentStage) unlockedStage = currentStage + 1; playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25; playerHP = playerMaxHP; statusText.innerText = 'برنده شدی!'; }
+  else { const loss = Math.min(coins, Math.round(10 * Math.max(1,currentStage))); coins -= loss; safeLog('شکست خوردی — از دست دادی ' + loss + ' سکه'); playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25; playerHP = Math.max(1, Math.round(playerMaxHP * 0.3)); statusText.innerText = 'شکست خوردی'; }
+  currentStage = 0; updateUI();
 }
 
 /* retreat */
 retreatBtn.addEventListener('click', ()=>{ if (!bossAlive) return; safeLog('فرار کردی از مبارزه.'); endFight(false); });
 
-/* -------------------- attack minigame (timing) (unchanged logic but triggers phase update) -------------------- */
+/* ---------------- attack timing minigame + cooldown ---------------- */
 let timing = { running:false, pos:0, speed:1.6, sweetLeft:0.25, sweetWidth:0.18 };
+
+function setAttackCooldown(ms){
+  attackReady = false;
+  attackBtn.disabled = true;
+  const start = Date.now();
+  if (attackCooldownTimer) clearInterval(attackCooldownTimer);
+  attackCooldownFill.style.width = '100%';
+  attackCooldownTimer = setInterval(()=>{
+    const elapsed = Date.now() - start;
+    const pct = Math.min(1, elapsed / ms);
+    attackCooldownFill.style.width = ((1 - pct) * 100) + '%'; // fill shrinks
+    if (pct >= 1){ clearInterval(attackCooldownTimer); attackCooldownTimer = null; attackReady = true; attackBtn.disabled = false; attackCooldownFill.style.width='0%'; }
+  }, 50);
+}
+
 function startTimingMinigame(){
   if (!bossAlive){ safeLog('الان باس نیست.'); return; }
   if (timing.running) return;
+  if (!attackReady){ safeLog('حمله در کول‌داون است. صبر کن.'); return; }
+
   const baseWidth = 0.18;
   timing.sweetWidth = Math.min(0.45, baseWidth + dcCount * 0.02);
   timing.sweetLeft = Math.max(0.08, Math.min(0.78, 0.25 + (Math.random() * 0.5 - 0.15)));
   timing.pos = 0; timing.running = true; timing.startTime = performance.now();
   timingUI.style.display = 'block'; timingUI.setAttribute('aria-hidden','false');
+
   const hadSpawn = !!spawnIntervalId;
   if (spawnIntervalId) stopSpawningBullets();
+
   let onKey = null; let clickHandler = null;
+
   function finishTiming(userPressed){
-    if (!timing.running) return; timing.running = false; timingUI.style.display = 'none'; timingUI.setAttribute('aria-hidden','true');
+    if (!timing.running) return;
+    timing.running = false; timingUI.style.display='none'; timingUI.setAttribute('aria-hidden','true');
     window.removeEventListener('keydown', onKey); attackBtn.removeEventListener('click', clickHandler);
+
     const winPos = timing.pos; const left = timing.sweetLeft; const right = timing.sweetLeft + timing.sweetWidth;
     let quality = 0;
     if (winPos >= left && winPos <= right){
       const center = (left + right)/2; const dist = Math.abs(winPos - center) / (timing.sweetWidth/2);
       quality = (dist < 0.18) ? 3 : (dist < 0.45 ? 2 : 1);
     } else quality = 0;
+
     let baseDamage;
     if (quality === 3) baseDamage = Math.round(45 + Math.random()*12);
     else if (quality === 2) baseDamage = Math.round(28 + Math.random()*10);
     else if (quality === 1) baseDamage = Math.round(16 + Math.random()*8);
     else baseDamage = Math.round(6 + Math.random()*6);
+
     const dmg = Math.round(baseDamage * damageMultiplier());
     bossHP -= dmg;
-    updateBossPhase(); // check phase after damage
+    updateBossPhase();
     const reward = Math.round(8 * Math.max(1,currentStage) * (1 + quality*0.25));
     coins += reward;
+
+    // play attack sfx
     playAttack();
+
     safeLog('تو حمله زدی — کیفیت: ' + (['Fail','OK','Great','Perfect'][quality]) + ' | ' + dmg + ' دمیج — +' + reward + ' سکه');
     updateUI();
+
+    // set cooldown
+    setAttackCooldown(ATTACK_COOLDOWN_MS);
+
     setTimeout(()=>{ if (hadSpawn && bossAlive && !ultimateActive) startSpawningBullets(currentStage); }, 300);
     if (bossHP <= 0){ bossHP = 0; updateUI(); endFight(true); }
   }
+
+  // pointer animation
   function step(){
     if (!timing.running) return;
-    const now = performance.now(); const elapsed = (now - timing.startTime) / 1000;
+    const now = performance.now();
+    const elapsed = (now - timing.startTime) / 1000;
     timing.pos = (Math.sin(elapsed * Math.PI * timing.speed - Math.PI/2) + 1) / 2;
     const parentW = timingUI.clientWidth || 300; pointerEl.style.left = (timing.pos * parentW) + 'px';
     if (elapsed > 3.2){ finishTiming(false); return; }
     requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
-  onKey = function(e){
-    if (e.key === ' ' || e.key === 'Spacebar'){ e.preventDefault(); }
-    if (!timing.running) return;
-    if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter'){ finishTiming(true); }
-  };
+
+  onKey = function(e){ if (e.key === ' ' || e.key === 'Spacebar'){ e.preventDefault(); } if (!timing.running) return; if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter'){ finishTiming(true); } };
   window.addEventListener('keydown', onKey);
   clickHandler = function(){ if (timing.running) finishTiming(true); };
   attackBtn.addEventListener('click', clickHandler);
 }
 
-/* -------------------- input movement & touch -------------------- */
-const keys = {};
-window.addEventListener('keydown', (e)=>{ keys[e.key] = true; });
-window.addEventListener('keyup', (e)=>{ keys[e.key] = false; });
+/* keyboard events (don't trigger attack on cooldown) */
+window.addEventListener('keydown', (e)=>{ keys[e.key]=true; if ((e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter') && !timing.running){ if (attackReady) startTimingMinigame(); else { e.preventDefault(); } } });
+window.addEventListener('keyup', (e)=>{ keys[e.key]=false; });
 
-let lastMoveTime = performance.now();
-function handlePlayerMovement(){
-  const now = performance.now();
-  const dt = (now - lastMoveTime) / 1000;
-  lastMoveTime = now;
-  let dx=0, dy=0;
-  if (keys['ArrowLeft']||keys['a']||keys['A']) dx -= 1;
-  if (keys['ArrowRight']||keys['d']||keys['D']) dx += 1;
-  if (keys['ArrowUp']||keys['w']||keys['W']) dy -= 1;
-  if (keys['ArrowDown']||keys['s']||keys['S']) dy += 1;
-  const len = Math.hypot(dx,dy);
-  if (len>0){ dx/=len; dy/=len; player.vx = dx * player.speed; player.vy = dy * player.speed; player.x += dx * player.speed * dt; player.y += dy * player.speed * dt; clampPlayerToCanvas(); } else { player.vx = 0; player.vy = 0; }
-  requestAnimationFrame(handlePlayerMovement);
+/* joystick implementation */
+const joyWrap = document.getElementById('joystickWrap');
+const joyBase = document.getElementById('joyBase');
+const joyKnob = document.getElementById('joyKnob');
+let joyPointerId = null;
+const joyRadius = 46; // knob movement radius in px (approx)
+function setKnob(x,y){ joyKnob.style.transform = `translate(${x}px, ${y}px)`; }
+function resetKnob(){ joyKnob.style.transform = 'translate(0px,0px)'; joyDir.x = 0; joyDir.y = 0; joystickActive = false; }
+
+function joyStart(ev){
+  ev.preventDefault();
+  joystickActive = true;
+  const rect = joyBase.getBoundingClientRect();
+  // find pointer id and client coords
+  let clientX = ev.clientX, clientY = ev.clientY, pointerId = null;
+  if (ev.changedTouches && ev.changedTouches[0]){ clientX = ev.changedTouches[0].clientX; clientY = ev.changedTouches[0].clientY; pointerId = ev.changedTouches[0].identifier; joyPointerId = pointerId; }
+  else if (ev.pointerId){ pointerId = ev.pointerId; joyPointerId = pointerId; }
+  else { joyPointerId = 'mouse'; }
+  joyMove({clientX, clientY});
+  // attach move/up listeners
+  window.addEventListener('pointermove', joyPointerMove);
+  window.addEventListener('pointerup', joyPointerUp);
+  window.addEventListener('touchmove', joyTouchMove, {passive:false});
+  window.addEventListener('touchend', joyTouchEnd);
 }
-function clampPlayerToCanvas(){
-  const margin = 6;
-  player.x = Math.max(margin, Math.min(canvas.width - margin - 160, player.x));
-  player.y = Math.max(margin, Math.min(canvas.height - margin, player.y));
+function joyPointerMove(e){
+  if (!joystickActive) return;
+  if (joyPointerId && e.pointerId !== joyPointerId && joyPointerId !== 'mouse') return;
+  joyMove(e);
+}
+function joyPointerUp(e){
+  if (joyPointerId && e.pointerId !== joyPointerId && joyPointerId !== 'mouse') return;
+  joyPointerId = null; resetKnob();
+  window.removeEventListener('pointermove', joyPointerMove);
+  window.removeEventListener('pointerup', joyPointerUp);
+}
+function joyTouchMove(e){
+  if (!joystickActive) return;
+  e.preventDefault();
+  const t = Array.from(e.changedTouches).find(t=>t.identifier === joyPointerId) || e.changedTouches[0];
+  if (!t) return;
+  joyMove(t);
+}
+function joyTouchEnd(e){
+  const t = Array.from(e.changedTouches).find(t=>t.identifier === joyPointerId);
+  if (t){ joyPointerId = null; resetKnob(); }
+}
+function joyMove(e){
+  const rect = joyBase.getBoundingClientRect();
+  const cx = rect.left + rect.width/2;
+  const cy = rect.top + rect.height/2;
+  const dx = (e.clientX - cx);
+  const dy = (e.clientY - cy);
+  // clamp by radius
+  const dist = Math.hypot(dx,dy);
+  const max = joyRadius;
+  let nx = dx, ny = dy;
+  if (dist > max){ nx = dx / dist * max; ny = dy / dist * max; }
+  setKnob(nx, ny);
+  // normalized direction - y inverted because screen coords
+  const ndx = nx / max;
+  const ndy = ny / max;
+  joyDir.x = ndx;
+  joyDir.y = ndy;
 }
 
-/* touch drag */
-function setupTouchDrag(){
-  function moveFromEvent(e){
-    const rect = canvas.getBoundingClientRect();
-    const touch = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : null);
-    const clientX = touch ? touch.clientX : (e.clientX);
-    const clientY = touch ? touch.clientY : (e.clientY);
-    if (clientX == null) return;
-    const x = (clientX - rect.left) * (canvas.width / rect.width);
-    const y = (clientY - rect.top) * (canvas.height / rect.height);
-    player.x = x; player.y = y; clampPlayerToCanvas();
-  }
-  canvas.addEventListener('touchstart', (e)=>{ isDragging=true; moveFromEvent(e); }, {passive:false});
-  canvas.addEventListener('touchmove', (e)=>{ if (isDragging) moveFromEvent(e); }, {passive:false});
-  window.addEventListener('touchend', ()=>{ isDragging=false; }, {passive:false});
-  canvas.addEventListener('mousedown', (e)=>{ isDragging=true; moveFromEvent(e); });
-  window.addEventListener('mousemove', (e)=>{ if (isDragging) moveFromEvent(e); });
-  window.addEventListener('mouseup', ()=>{ isDragging=false; });
+/* attach joystick listeners */
+joyBase.addEventListener('pointerdown', joyStart);
+joyBase.addEventListener('touchstart', (e)=>{ e.preventDefault(); joyStart(e.touches ? e.touches[0] : e); }, {passive:false});
+joyBase.addEventListener('mousedown', (e)=>{ joyStart(e); });
+
+/* touch drag on canvas (if user prefers dragging player directly) */
+function setupCanvasDrag(){
+  let dragging = false;
+  function down(e){ dragging=true; move(e); }
+  function move(e){ if (!dragging) return; const rect = canvas.getBoundingClientRect(); const t = e.touches ? e.touches[0] : e; const x = (t.clientX - rect.left) * (canvas.width / rect.width); const y = (t.clientY - rect.top) * (canvas.height / rect.height); player.x = x; player.y = y; clampPlayerToCanvas(); }
+  function up(){ dragging=false; }
+  canvas.addEventListener('touchstart', (e)=>{ e.preventDefault(); down(e.touches[0]); }, {passive:false});
+  canvas.addEventListener('touchmove', (e)=>{ e.preventDefault(); move(e.touches[0]); }, {passive:false});
+  canvas.addEventListener('touchend', (e)=>{ up(); }, {passive:false});
+  canvas.addEventListener('mousedown', (e)=>{ down(e); window.addEventListener('mousemove', move); window.addEventListener('mouseup', ()=>{ up(); window.removeEventListener('mousemove', move); }); });
 }
 
-/* -------------------- buy DC & stages (unchanged) -------------------- */
-function buyDataCenter(){
-  if (coins < dcCost){ safeLog('سکه کافی نداری'); return; }
-  coins -= dcCost; dcCount += 1;
-  dcCost = Math.min(999999999, Math.round(dcCost * 1.6));
-  const oldMax = playerMaxHP; playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25; const hpIncrease = playerMaxHP - oldMax;
-  playerHP = Math.min(playerMaxHP, playerHP + Math.round(hpIncrease * 0.7));
-  safeLog('دیتاسنتر خریدی — +25 Max HP و HP فعلی افزایش یافت');
-  updateUI();
-}
+/* clamp player */
+function clampPlayerToCanvas(){ const margin=6; player.x = Math.max(margin, Math.min(canvas.width - margin - 160, player.x)); player.y = Math.max(margin, Math.min(canvas.height - margin, player.y)); }
 
-function buildStages(){
-  stagesGrid.innerHTML = '';
-  for(let s=1;s<=TOTAL_STAGES;s++){
-    const div=document.createElement('div');
-    div.style.padding='10px'; div.style.borderRadius='8px'; div.style.background=(s<=unlockedStage)?'#101014':'#0b0b0d';
-    div.style.border='1px solid rgba(255,255,255,0.03)'; div.style.cursor=(s<=unlockedStage)?'pointer':'not-allowed';
-    div.innerHTML = '<div style="font-weight:800;color:var(--accent)">مرحله '+s+'</div><div style="font-size:0.85rem;margin-top:6px">'+(s<=4?'آسان':s<=12?'متوسط':s<=24?'سخت':'نهایی')+'</div>';
-    if (s<=unlockedStage) div.addEventListener('click', ()=>{ startStage(s); closeModal(); }); else div.title='این مرحله قفل است';
-    stagesGrid.appendChild(div);
-  }
-}
-function openModal(){ stageModal.style.display='flex'; }
-function closeModal(){ stageModal.style.display='none'; }
+/* buy DC & stages (unchanged logic) */
+function buyDataCenter(){ if (coins < dcCost){ safeLog('سکه کافی نداری'); return; } coins -= dcCost; dcCount += 1; dcCost = Math.min(999999999, Math.round(dcCost * 1.6)); const oldMax = playerMaxHP; playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25; const hpIncrease = playerMaxHP - oldMax; playerHP = Math.min(playerMaxHP, playerHP + Math.round(hpIncrease * 0.7)); safeLog('دیتاسنتر خریدی — +25 Max HP و HP فعلی افزایش یافت'); updateUI(); }
 
-/* events */
-document.getElementById('openStagesBtn').addEventListener('click', ()=>{ buildStages(); openModal(); });
-document.getElementById('closeStageModal').addEventListener('click', closeModal);
+function buildStages(){ stagesGrid.innerHTML = ''; for (let s=1;s<=TOTAL_STAGES;s++){ const div=document.createElement('div'); div.style.padding='10px'; div.style.borderRadius='8px'; div.style.background=(s<=unlockedStage)?'#101014':'#0b0b0d'; div.style.border='1px solid rgba(255,255,255,0.03)'; div.style.cursor=(s<=unlockedStage)?'pointer':'not-allowed'; div.innerHTML = '<div style="font-weight:800;color:var(--accent)">مرحله '+s+'</div><div style="font-size:0.85rem;margin-top:6px">'+(s<=4?'آسان':s<=12?'متوسط':s<=24?'سخت':'نهایی')+'</div>'; if (s<=unlockedStage) div.addEventListener('click', ()=>{ startStage(s); closeModal(); }); else div.title='این مرحله قفل است'; stagesGrid.appendChild(div); } }
+function openModal(){ stageModal.style.display = 'flex'; }
+function closeModal(){ stageModal.style.display = 'none'; }
+
+/* UI events */
+openStagesBtn.addEventListener('click', ()=>{ buildStages(); openModal(); });
+closeStageModal.addEventListener('click', closeModal);
 attackBtn.addEventListener('click', ()=>{ if (!timing.running) startTimingMinigame(); });
 buyDCBtn.addEventListener('click', buyDataCenter);
-resetBtn.addEventListener('click', ()=>{ if(confirm('میخوای ذخیره رو ریست کنی؟')){ localStorage.clear(); location.reload(); } });
+resetBtn.addEventListener('click', ()=>{ if (confirm('میخوای ذخیره رو ریست کنی؟')){ localStorage.clear(); location.reload(); } });
 
 /* init */
 function init(){
@@ -666,13 +644,23 @@ function init(){
   }
   setTimeout(()=>{ resizeCanvas(); player.x = 120; player.y = canvas.height/2; updateUI(); render(); }, 50);
   window.addEventListener('resize', ()=>{ resizeCanvas(); });
-  setupTouchDrag();
-  handlePlayerMovement();
+  setupCanvasDrag();
+  handleLoopMovement();
   updateUI();
-  safeLog('سیستم باس پیشرفته آماده است — مرحله رو انتخاب کن و بجنگ!');
+  safeLog('جوی‌استیک و کول‌داون اضافه شد — تست کن و بگو تنظیمات چی طوره!');
 }
+
+/* small loop to keep movement responsive (separate from raf) */
+let lastMoveTime = performance.now();
+function handleLoopMovement(){
+  const now = performance.now(); const dt = (now - lastMoveTime)/1000; lastMoveTime = now;
+  // movement is applied in raf updatePhysics; we just schedule next frame here
+  requestAnimationFrame(handleLoopMovement);
+}
+
 window.addEventListener('beforeunload', ()=>{ stopSpawningBullets(); if (rafId) cancelAnimationFrame(rafId); });
 window.__hc = { startStage, buyDataCenter, getState: ()=>({coins,dcCount,dcCost,unlockedStage,playerHP,playerMaxHP,bossHP,currentStage,bossPhase}) };
+
 init();
 </script>
 </body>
