@@ -44,6 +44,8 @@
   .joy-label{position:absolute;left:14px;bottom:140px;color:#cfd8dc;font-size:0.8rem;opacity:0.95}
   /* boss warning */
   .boss-warning{position:absolute; left:50%; transform:translateX(-50%); top:12px; padding:8px 12px; background:rgba(255,0,70,0.12); border-radius:8px; border:1px solid rgba(255,0,70,0.18); color:#ffd0d9; display:none; z-index:30}
+  .hp-bar{height:10px;background:rgba(255,255,255,0.04);border-radius:8px;overflow:hidden;margin-top:6px}
+  .hp-bar .fill{height:100%;width:100%;background:linear-gradient(90deg,#ff6b6b,#ffb86b)}
   @media (max-width:720px){ .joystick-wrap{left:10px;bottom:10px; width:100px;height:100px} .joy-base{width:100px;height:100px} .joy-knob{width:44px;height:44px} }
 </style>
 </head>
@@ -93,9 +95,10 @@
       <div style="flex:1; max-width:360px;">
         <div class="card" style="margin-bottom:12px;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div>جزئیات باس</div>
+            <div>جزئیات باس: <span id="bossName" class="small" style="font-weight:800;color:var(--accent)">—</span></div>
             <div class="small">فاز: <span id="bossPhaseText">1</span></div>
           </div>
+          <div class="hp-bar" style="margin-top:8px"><div id="bossHPFill" class="fill" style="width:100%"></div></div>
           <div style="height:8px"></div>
           <div class="log" id="log">> خوش آمدی! با جوی‌استیک جاخالی بده و با Space حمله کن.</div>
         </div>
@@ -152,7 +155,7 @@ function readNumber(k,f){ try{ const v=localStorage.getItem(k); if(v===null) ret
 function saveNumber(k,v){ try{ localStorage.setItem(k,String(v)); }catch(e){} }
 function safeLog(msg){ const el=document.getElementById('log'); const esc=String(msg).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); el.innerHTML = '> ' + esc + '<br>' + el.innerHTML; }
 
-/* ---------------- game state (based on prev advanced version) ---------------- */
+/* ---------------- game state ---------------- */
 const TOTAL_STAGES = 34;
 let coins = readNumber('hc_coins', 0);
 let dcCount = readNumber('hc_dcCount', 0);
@@ -177,6 +180,21 @@ let spiralOffset = 0;
 let ultimateUsed = false;
 let ultimateActive = false;
 
+/* ---------------- boss definitions (unique per stage) ---------------- */
+const bossDefs = [
+  { id:'inferno', name:'اينفرنو دراگون', color:'rgba(255,100,60,0.95)', hpMult:1.0, pattern:'fireballs' },
+  { id:'shadow',  name:'آسانسین سایه', color:'rgba(160,80,200,0.95)', hpMult:1.05, pattern:'dashes' },
+  { id:'slime',   name:'سمی اسلایم', color:'rgba(90,200,110,0.95)', hpMult:1.12, pattern:'poison' },
+  { id:'storm',   name:'تایتان طوفان', color:'rgba(80,160,255,0.95)', hpMult:1.18, pattern:'lightning' },
+  { id:'mecha',   name:'مکا گولم', color:'rgba(180,180,200,0.95)', hpMult:1.25, pattern:'lasers' },
+  { id:'void',    name:'اِووید وُید', color:'rgba(220,60,220,0.95)', hpMult:1.3, pattern:'spiral' },
+  { id:'rock',    name:'راک کلنگ', color:'rgba(200,140,80,0.95)', hpMult:1.35, pattern:'boulder' },
+  { id:'oracle',  name:'نَبّی برق', color:'rgba(255,240,100,0.95)', hpMult:1.45, pattern:'lightBurst' },
+  // میتونی این آرایه رو با باس‌های جدید ادامه بدی
+];
+
+let currentBossDef = bossDefs[0];
+
 /* DOM */
 const coinsEl = document.getElementById('coins');
 const dcCountEl = document.getElementById('dcCount');
@@ -187,6 +205,8 @@ const statusText = document.getElementById('statusText');
 const currentStageText = document.getElementById('currentStageText');
 const bossPhaseTextEl = document.getElementById('bossPhaseText');
 const bossWarningEl = document.getElementById('bossWarning');
+const bossNameEl = document.getElementById('bossName');
+const bossHPFillEl = document.getElementById('bossHPFill');
 
 const canvas = document.getElementById('arenaCanvas');
 const ctx = canvas.getContext('2d');
@@ -206,20 +226,18 @@ const resetBtn = document.getElementById('resetBtn');
 /* player */
 let player = { x:120, y: canvas.height/2, size:18, speed:300, vx:0, vy:0 };
 
-/* movement control: keyboard + joystick */
+/* movement control */
 const keys = {};
 let joystickActive = false;
 let joyDir = { x:0, y:0 };
 
 /* cooldown */
 let attackReady = true;
-const ATTACK_COOLDOWN_MS = 1300; // feel free to tune
+const ATTACK_COOLDOWN_MS = 1300;
 let attackCooldownTimer = null;
 
-/* difficulty helpers */
+/* helpers */
 function damageMultiplier(){ return 1 + dcCount * 0.35; }
-function computeBossHPForStage(stage){ return Math.round(300 * Math.pow(1.5, stage-1)); }
-function computeBossAttackBase(stage){ return Math.round(8 * Math.pow(1.22, stage-1)); }
 
 /* UI update */
 function updateUI(){
@@ -230,6 +248,10 @@ function updateUI(){
   playerHPText.innerText = 'HP: ' + Math.max(0,Math.round(playerHP)) + ' / ' + Math.round(playerMaxHP);
   currentStageText.innerText = currentStage ? currentStage : '—';
   bossPhaseTextEl.innerText = bossPhase;
+  bossNameEl.innerText = currentBossDef ? currentBossDef.name : '—';
+  // hp bar
+  const pct = bossMaxHP ? Math.max(0, Math.min(1, bossHP / bossMaxHP)) : 0;
+  bossHPFillEl.style.width = (pct * 100) + '%';
   saveNumber('hc_coins', coins);
   saveNumber('hc_dcCount', dcCount);
   saveNumber('hc_dcCost', dcCost);
@@ -241,7 +263,8 @@ function spawnBulletAt(angle, speed, size=8, color='rgba(255,80,80,0.95)'){
   const spawnX = canvas.width - 60, spawnY = canvas.height / 2;
   bullets.push({ x:spawnX, y:spawnY, vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed, r:size, color });
 }
-function cleanupBullets(){ bullets = bullets.filter(b => b.x + b.r > -50 && b.x - b.r < canvas.width + 50 && b.y + b.r > -50 && b.y - b.r < canvas.height + 50); }
+function spawnBulletFrom(x,y,vx,vy,r=6,color='rgba(255,120,60,0.95)'){ bullets.push({x,y,vx,vy,r,color}); }
+function cleanupBullets(){ bullets = bullets.filter(b => b.x + b.r > -100 && b.x - b.r < canvas.width + 100 && b.y + b.r > -100 && b.y - b.r < canvas.height + 100); }
 
 /* collisions */
 function rectCircleColliding(circle, rect){
@@ -265,18 +288,15 @@ function rafLoop(now){
   rafId = requestAnimationFrame(rafLoop);
 }
 function updatePhysics(dt){
-  // update bullets
   for (const b of bullets){ b.x += b.vx * dt; b.y += b.vy * dt; }
   cleanupBullets();
 
-  // move player from keys or joystick (joystick overrides keys when active)
   if (joystickActive){
     player.vx = joyDir.x * player.speed;
     player.vy = joyDir.y * player.speed;
     player.x += player.vx * dt;
     player.y += player.vy * dt;
   } else {
-    // keyboard movement
     let dx=0, dy=0;
     if (keys['ArrowLeft']||keys['a']||keys['A']) dx -= 1;
     if (keys['ArrowRight']||keys['d']||keys['D']) dx += 1;
@@ -287,14 +307,13 @@ function updatePhysics(dt){
   }
   clampPlayerToCanvas();
 
-  // collisions bullets vs player
   const playerRect = { x: player.x - player.size/2, y: player.y - player.size/2, w: player.size, h: player.size };
   for (let i=bullets.length-1;i>=0;i--){
     if (rectCircleColliding(bullets[i], playerRect)){
       const dmg = Math.max(1, Math.round(6 + Math.random()*6));
       playerHP -= dmg;
       playHurt();
-      safeLog('حمله برخورد کرد — ' + dmg + ' دمیج');
+      safeLog('حمله خوردی — ' + dmg + ' دمیج');
       bullets.splice(i,1);
       if (playerHP <= 0){ playerHP = 0; updateUI(); endFight(false); return; }
       updateUI();
@@ -304,15 +323,17 @@ function updatePhysics(dt){
 function render(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   const bossX = canvas.width - 60, bossY = canvas.height/2;
-  ctx.beginPath(); ctx.fillStyle = (ultimateActive ? 'rgba(255,40,80,0.16)' : 'rgba(125,0,178,0.12)'); ctx.arc(bossX, bossY, 36 + (bossPhase-1)*2, 0, Math.PI*2); ctx.fill(); ctx.closePath();
-  ctx.beginPath(); ctx.fillStyle = '#ff6b6b'; ctx.arc(bossX - 12, bossY - 8, 6, 0, Math.PI*2); ctx.arc(bossX + 12, bossY - 8, 6, 0, Math.PI*2); ctx.fill(); ctx.closePath();
+  // boss aura
+  ctx.beginPath(); ctx.fillStyle = (ultimateActive ? 'rgba(255,40,80,0.16)' : currentBossDef.color || 'rgba(125,0,178,0.12)'); ctx.arc(bossX, bossY, 36 + (bossPhase-1)*2, 0, Math.PI*2); ctx.fill(); ctx.closePath();
+  // boss eyes
+  ctx.beginPath(); ctx.fillStyle = '#111'; ctx.arc(bossX - 12, bossY - 8, 6, 0, Math.PI*2); ctx.arc(bossX + 12, bossY - 8, 6, 0, Math.PI*2); ctx.fill(); ctx.closePath();
 
   for (const b of bullets){ ctx.beginPath(); ctx.fillStyle = b.color; ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill(); ctx.closePath(); }
 
   ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(Math.sin(performance.now()/200)*0.05); ctx.fillStyle = '#ffd59a'; const s = player.size; ctx.fillRect(-s/2, -s/2, s, s); ctx.restore();
 }
 
-/* boss logic (patterns simplified for brevity) */
+/* ---------------- boss behavior / patterns ---------------- */
 function updateBossPhase(){
   if (!bossMaxHP) return;
   const pct = bossHP / bossMaxHP;
@@ -329,6 +350,16 @@ function updateBossPhase(){
   updateUI();
 }
 
+/* basic low-level patterns reused */
+function burstPattern(centerX, centerY, pieces=6, spread=0.9, speed=170, color='rgba(255,120,60,0.95)'){
+  const centerAngle = Math.atan2(player.y - centerY, player.x - centerX);
+  for (let i=0;i<pieces;i++){
+    const angle = centerAngle + (i - (pieces-1)/2) * spread;
+    const spd = speed + i*6 * (Math.random()*0.7 + 0.3);
+    spawnBulletAt(angle, spd, 7, color);
+  }
+  playBeep(360,0.09,'sawtooth',0.12);
+}
 function spiralPattern(stage,count=10,speed=180,color='rgba(220,60,220,0.95)'){
   for (let i=0;i<count;i++){
     const angle = spiralOffset + (i/count) * Math.PI*2;
@@ -337,22 +368,72 @@ function spiralPattern(stage,count=10,speed=180,color='rgba(220,60,220,0.95)'){
   spiralOffset += 0.28 + bossPhase*0.05;
   playBeep(380,0.08,'square',0.12);
 }
-function burstPattern(stage,pieces=6,spread=0.9,speed=200){
-  const centerAngle = Math.atan2(player.y - canvas.height/2, player.x - (canvas.width - 60));
-  for (let i=0;i<pieces;i++){
-    const angle = centerAngle + (i - (pieces-1)/2) * spread;
-    spawnBulletAt(angle, speed + i*8, 7);
-  }
-  playBeep(360,0.09,'sawtooth',0.12);
-}
-function wavePattern(stage,rows=5,speed=160,color='rgba(255,120,60,0.95)'){
-  const gap = (canvas.height - 80) / (rows - 1 || 1);
-  for (let r=0;r<rows;r++){
-    const y = 40 + r * gap;
-    bullets.push({ x: canvas.width + 20, y, vx: -speed * (0.9 + Math.random()*0.2), vy: Math.sin(r + Date.now()/500)*6 * 0.02, r:6, color });
+function waveFromTop(count=6,speed=220,color='rgba(180,200,255,0.95)'){
+  for (let i=0;i<count;i++){
+    const x = 40 + Math.random() * (canvas.width - 80);
+    spawnBulletFrom(x, -20, 0, speed * (0.9 + Math.random()*0.2), 8, color);
   }
   playBeep(320,0.06,'sine',0.10);
 }
+
+/* specific boss patterns */
+function pattern_fireballs(stage){
+  // spread + follow
+  burstPattern(canvas.width-60, canvas.height/2, 6 + bossPhase, 0.9, 160 + bossPhase*20, currentBossDef.color);
+  if (Math.random() < 0.35) aimedPredictive(stage, 160 + Math.random()*40);
+}
+function pattern_dashes(stage){
+  // teleport + dash bursts: simulate by spawning fast bullets from various offsets
+  const offsets = [-40, -10, 10, 40];
+  const off = offsets[Math.floor(Math.random()*offsets.length)];
+  for (let i=0;i<3 + bossPhase;i++){
+    const sx = canvas.width - 60;
+    const sy = canvas.height/2 + off + (Math.random()*40-20);
+    const dx = player.x - sx + (Math.random()*80-40);
+    const dy = player.y - sy + (Math.random()*80-40);
+    const ang = Math.atan2(dy, dx);
+    spawnBulletFrom(sx, sy, Math.cos(ang)*(220 + i*10), Math.sin(ang)*(220 + i*10), 8, currentBossDef.color);
+  }
+  playBeep(420,0.06,'square',0.12);
+}
+function pattern_poison(stage){
+  // bullets that are a bit slower and spawn rings occasionally
+  waveFromTop(4 + bossPhase, 120 + bossPhase*10, 'rgba(80,200,120,0.9)');
+  if (Math.random() < 0.4) spiralPattern(stage, 10 + bossPhase*2, 140, 'rgba(120,255,140,0.9)');
+}
+function pattern_lightning(stage){
+  // random vertical strikes from top, fast
+  for (let i=0;i<2 + bossPhase;i++){
+    const x = 80 + Math.random() * (canvas.width - 160);
+    spawnBulletFrom(x, -10, 0, 300 + Math.random()*120, 9, 'rgba(200,230,255,0.98)');
+  }
+  playBeep(480,0.06,'sine',0.12);
+}
+function pattern_lasers(stage){
+  // dense horizontal bullets (simulate lasers)
+  for (let r=0;r<2 + bossPhase;r++){
+    const y = 40 + Math.random() * (canvas.height - 80);
+    spawnBulletFrom(canvas.width + 30, y, -260 - Math.random()*60, 0, 10, 'rgba(255,200,80,0.95)');
+  }
+  playBeep(520,0.06,'sawtooth',0.12);
+}
+function pattern_spiral(stage){
+  spiralPattern(stage, 14 + bossPhase*2, 200, currentBossDef.color);
+}
+function pattern_boulder(stage){
+  // heavy slow boulders: big radius and slow speed
+  for (let i=0;i<3 + bossPhase;i++){
+    const y = 60 + Math.random() * (canvas.height - 120);
+    spawnBulletFrom(canvas.width + 40, y, -120 - Math.random()*40, 0, 14, 'rgba(180,140,90,0.95)');
+  }
+  playBeep(300,0.08,'square',0.12);
+}
+function pattern_lightBurst(stage){
+  // bursts of fast projectiles in all directions
+  spiralPattern(stage, 18 + bossPhase*3, 240, 'rgba(255,240,120,0.95)');
+}
+
+/* predictive aimed bullet helper (used in some patterns) */
 function aimedPredictive(stage,speed=220){
   const sx = canvas.width - 60, sy = canvas.height/2;
   const dx = player.x - sx, dy = player.y - sy; const dist = Math.hypot(dx,dy);
@@ -364,26 +445,20 @@ function aimedPredictive(stage,speed=220){
   playBeep(400,0.06,'square',0.11);
 }
 
+/* choose and execute pattern based on current boss def */
 function chooseAndExecutePattern(stage){
   if (!bossAlive || ultimateActive) return;
-  const r = Math.random();
-  if (bossPhase === 1){
-    if (r < 0.5) aimedPredictive(stage,160 + Math.random()*40);
-    else if (r < 0.8) burstPattern(stage,4,0.9,170);
-    else wavePattern(stage,3,150);
-  } else if (bossPhase === 2){
-    if (r < 0.35) aimedPredictive(stage,180 + Math.random()*50);
-    else if (r < 0.7) burstPattern(stage,5,0.8,180);
-    else spiralPattern(stage,10 + bossPhase*2,180);
-  } else if (bossPhase === 3){
-    if (r < 0.25) spiralPattern(stage,12 + bossPhase*2,200);
-    else if (r < 0.6) burstPattern(stage,6,0.7,200);
-    else wavePattern(stage,5 + bossPhase,190);
-  } else {
-    if (!ultimateUsed && Math.random() < 0.06){ triggerUltimate(stage); return; }
-    if (r < 0.3) spiralPattern(stage,16,220);
-    else if (r < 0.65) burstPattern(stage,8,0.6,220);
-    else wavePattern(stage,6 + bossPhase,210);
+  const pat = currentBossDef.pattern;
+  switch(pat){
+    case 'fireballs': pattern_fireballs(stage); break;
+    case 'dashes': pattern_dashes(stage); break;
+    case 'poison': pattern_poison(stage); break;
+    case 'lightning': pattern_lightning(stage); break;
+    case 'lasers': pattern_lasers(stage); break;
+    case 'spiral': pattern_spiral(stage); break;
+    case 'boulder': pattern_boulder(stage); break;
+    case 'lightBurst': pattern_lightBurst(stage); break;
+    default: pattern_fireballs(stage); break;
   }
 }
 
@@ -398,33 +473,50 @@ function triggerUltimate(stage){
     const ultimateDuration = 2200; const end = performance.now() + ultimateDuration;
     const ultInterval = setInterval(()=>{
       if (!ultimateActive) { clearInterval(ultInterval); return; }
-      spiralPattern(stage,18,260); aimedPredictive(stage,260); wavePattern(stage,6,200,'rgba(255,200,160,0.95)');
+      // during ultimate, spawn a lot of boss-specific patterns
+      for (let i=0;i<2;i++) chooseAndExecutePattern(stage);
       if (performance.now() >= end){ clearInterval(ultInterval); ultimateActive=false; if (bossAlive) startSpawningBullets(stage); }
-    }, 120);
+    }, 140);
   }, 900);
 }
 
 /* spawn controller */
 function startSpawningBullets(stage){
   stopSpawningBullets();
-  const base = Math.max(280, 900 - (stage-1)*26);
+  const base = Math.max(200, 900 - (stage-1)*18);
   const phaseMod = Math.max(1, 1.0 - (bossPhase-1)*0.08);
   const interval = Math.round(base * phaseMod);
-  spawnIntervalId = setInterval(()=>{ chooseAndExecutePattern(stage); }, interval);
+  spawnIntervalId = setInterval(()=>{ 
+    // occasionally trigger ultimate on higher phases
+    if (bossPhase >= 4 && !ultimateUsed && Math.random() < 0.04) { triggerUltimate(stage); return; }
+    chooseAndExecutePattern(stage); 
+  }, Math.max(80, interval));
 }
 function stopSpawningBullets(){ if (spawnIntervalId){ clearInterval(spawnIntervalId); spawnIntervalId = null; } }
+
+/* ---------------- spawn boss per stage (unique) ---------------- */
+function spawnBossForStage(stage){
+  const index = (stage - 1) % bossDefs.length;
+  currentBossDef = bossDefs[index];
+  // scale HP by stage cycles: each full rotation increases difficulty a bit
+  const cycles = Math.floor((stage - 1) / bossDefs.length);
+  bossMaxHP = Math.round(300 * currentBossDef.hpMult * Math.pow(1.18, cycles) * Math.pow(1.08, stage-1));
+  bossHP = bossMaxHP;
+  bossPhase = 1;
+  ultimateUsed = false;
+  ultimateActive = false;
+  safeLog('⚔️ مرحله ' + stage + ' — ' + currentBossDef.name + ' وارد شد!');
+  updateUI();
+}
 
 /* start/end fight */
 function startStage(stage){
   if (bossAlive){ safeLog('الان در مبارزه‌ای — اول تمومش کن یا فرار کن.'); return; }
   currentStage = stage;
-  bossMaxHP = computeBossHPForStage(stage);
-  bossHP = bossMaxHP;
+  spawnBossForStage(stage);
   playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
   playerHP = playerMaxHP;
-  bossPhase = 1; ultimateUsed = false; ultimateActive = false;
   bossAlive = true; bullets = [];
-  safeLog('مرحله '+stage+' شروع شد — باس HP: ' + bossMaxHP);
   statusText.innerText = 'مبارزه (مرحله '+stage+')'; retreatBtn.style.display = 'inline-block';
   startSpawningBullets(stage);
   if (!rafId){ lastFrame = performance.now(); rafId = requestAnimationFrame(rafLoop); }
@@ -433,8 +525,23 @@ function startStage(stage){
 function endFight(victory){
   bossAlive = false; stopSpawningBullets(); if (rafId){ cancelAnimationFrame(rafId); rafId=null; }
   bullets = []; retreatBtn.style.display = 'none'; timingUI.style.display='none'; timingUI.setAttribute('aria-hidden','true'); bossWarningEl.style.display='none'; ultimateActive=false;
-  if (victory){ playWin(); const reward = Math.round(100 * Math.max(1,currentStage) * (1 + dcCount*0.08)); coins += reward; safeLog('تبریک! باس شکست خورد — +' + reward + ' سکه'); if (currentStage < TOTAL_STAGES && unlockedStage <= currentStage) unlockedStage = currentStage + 1; playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25; playerHP = playerMaxHP; statusText.innerText = 'برنده شدی!'; }
-  else { const loss = Math.min(coins, Math.round(10 * Math.max(1,currentStage))); coins -= loss; safeLog('شکست خوردی — از دست دادی ' + loss + ' سکه'); playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25; playerHP = Math.max(1, Math.round(playerMaxHP * 0.3)); statusText.innerText = 'شکست خوردی'; }
+  if (victory){
+    playWin();
+    const reward = Math.round(100 * Math.max(1,currentStage) * (1 + dcCount*0.08));
+    coins += reward;
+    safeLog('تبریک! ' + currentBossDef.name + ' شکست خورد — +' + reward + ' سکه');
+    if (currentStage < TOTAL_STAGES && unlockedStage <= currentStage) unlockedStage = currentStage + 1;
+    playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
+    playerHP = playerMaxHP;
+    statusText.innerText = 'برنده شدی!';
+  } else {
+    const loss = Math.min(coins, Math.round(10 * Math.max(1,currentStage)));
+    coins -= loss;
+    safeLog('شکست خوردی — از دست دادی ' + loss + ' سکه');
+    playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
+    playerHP = Math.max(1, Math.round(playerMaxHP * 0.3));
+    statusText.innerText = 'شکست خوردی';
+  }
   currentStage = 0; updateUI();
 }
 
@@ -453,7 +560,7 @@ function setAttackCooldown(ms){
   attackCooldownTimer = setInterval(()=>{
     const elapsed = Date.now() - start;
     const pct = Math.min(1, elapsed / ms);
-    attackCooldownFill.style.width = ((1 - pct) * 100) + '%'; // fill shrinks
+    attackCooldownFill.style.width = ((1 - pct) * 100) + '%';
     if (pct >= 1){ clearInterval(attackCooldownTimer); attackCooldownTimer = null; attackReady = true; attackBtn.disabled = false; attackCooldownFill.style.width='0%'; }
   }, 50);
 }
@@ -472,13 +579,9 @@ function startTimingMinigame(){
   const hadSpawn = !!spawnIntervalId;
   if (spawnIntervalId) stopSpawningBullets();
 
-  let onKey = null; let clickHandler = null;
-
   function finishTiming(userPressed){
     if (!timing.running) return;
     timing.running = false; timingUI.style.display='none'; timingUI.setAttribute('aria-hidden','true');
-    window.removeEventListener('keydown', onKey); attackBtn.removeEventListener('click', clickHandler);
-
     const winPos = timing.pos; const left = timing.sweetLeft; const right = timing.sweetLeft + timing.sweetWidth;
     let quality = 0;
     if (winPos >= left && winPos <= right){
@@ -498,20 +601,17 @@ function startTimingMinigame(){
     const reward = Math.round(8 * Math.max(1,currentStage) * (1 + quality*0.25));
     coins += reward;
 
-    // play attack sfx
     playAttack();
 
     safeLog('تو حمله زدی — کیفیت: ' + (['Fail','OK','Great','Perfect'][quality]) + ' | ' + dmg + ' دمیج — +' + reward + ' سکه');
     updateUI();
 
-    // set cooldown
     setAttackCooldown(ATTACK_COOLDOWN_MS);
 
     setTimeout(()=>{ if (hadSpawn && bossAlive && !ultimateActive) startSpawningBullets(currentStage); }, 300);
     if (bossHP <= 0){ bossHP = 0; updateUI(); endFight(true); }
   }
 
-  // pointer animation
   function step(){
     if (!timing.running) return;
     const now = performance.now();
@@ -523,36 +623,33 @@ function startTimingMinigame(){
   }
   requestAnimationFrame(step);
 
-  onKey = function(e){ if (e.key === ' ' || e.key === 'Spacebar'){ e.preventDefault(); } if (!timing.running) return; if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter'){ finishTiming(true); } };
-  window.addEventListener('keydown', onKey);
-  clickHandler = function(){ if (timing.running) finishTiming(true); };
-  attackBtn.addEventListener('click', clickHandler);
+  const onKey = function(e){ if (e.key === ' ' || e.key === 'Spacebar'){ e.preventDefault(); } if (!timing.running) return; if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter'){ finishTiming(true); } };
+  window.addEventListener('keydown', onKey, {once:false});
+  const clickHandler = function(){ if (timing.running) finishTiming(true); };
+  attackBtn.addEventListener('click', clickHandler, {once:false});
 }
 
-/* keyboard events (don't trigger attack on cooldown) */
+/* keyboard events */
 window.addEventListener('keydown', (e)=>{ keys[e.key]=true; if ((e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter') && !timing.running){ if (attackReady) startTimingMinigame(); else { e.preventDefault(); } } });
 window.addEventListener('keyup', (e)=>{ keys[e.key]=false; });
 
-/* joystick implementation */
+/* joystick implementation (unchanged) */
 const joyWrap = document.getElementById('joystickWrap');
 const joyBase = document.getElementById('joyBase');
 const joyKnob = document.getElementById('joyKnob');
 let joyPointerId = null;
-const joyRadius = 46; // knob movement radius in px (approx)
-function setKnob(x,y){ joyKnob.style.transform = `translate(${x}px, ${y}px)`; }
+const joyRadius = 46;
+function setKnob(x,y){ joyKnob.style.transform = `translate(${x}px, ${y}px)`; joystickActive=true; }
 function resetKnob(){ joyKnob.style.transform = 'translate(0px,0px)'; joyDir.x = 0; joyDir.y = 0; joystickActive = false; }
 
 function joyStart(ev){
   ev.preventDefault();
   joystickActive = true;
-  const rect = joyBase.getBoundingClientRect();
-  // find pointer id and client coords
   let clientX = ev.clientX, clientY = ev.clientY, pointerId = null;
   if (ev.changedTouches && ev.changedTouches[0]){ clientX = ev.changedTouches[0].clientX; clientY = ev.changedTouches[0].clientY; pointerId = ev.changedTouches[0].identifier; joyPointerId = pointerId; }
   else if (ev.pointerId){ pointerId = ev.pointerId; joyPointerId = pointerId; }
   else { joyPointerId = 'mouse'; }
   joyMove({clientX, clientY});
-  // attach move/up listeners
   window.addEventListener('pointermove', joyPointerMove);
   window.addEventListener('pointerup', joyPointerUp);
   window.addEventListener('touchmove', joyTouchMove, {passive:false});
@@ -586,25 +683,22 @@ function joyMove(e){
   const cy = rect.top + rect.height/2;
   const dx = (e.clientX - cx);
   const dy = (e.clientY - cy);
-  // clamp by radius
   const dist = Math.hypot(dx,dy);
   const max = joyRadius;
   let nx = dx, ny = dy;
   if (dist > max){ nx = dx / dist * max; ny = dy / dist * max; }
   setKnob(nx, ny);
-  // normalized direction - y inverted because screen coords
   const ndx = nx / max;
   const ndy = ny / max;
   joyDir.x = ndx;
   joyDir.y = ndy;
 }
 
-/* attach joystick listeners */
 joyBase.addEventListener('pointerdown', joyStart);
 joyBase.addEventListener('touchstart', (e)=>{ e.preventDefault(); joyStart(e.touches ? e.touches[0] : e); }, {passive:false});
 joyBase.addEventListener('mousedown', (e)=>{ joyStart(e); });
 
-/* touch drag on canvas (if user prefers dragging player directly) */
+/* canvas drag */
 function setupCanvasDrag(){
   let dragging = false;
   function down(e){ dragging=true; move(e); }
@@ -619,7 +713,7 @@ function setupCanvasDrag(){
 /* clamp player */
 function clampPlayerToCanvas(){ const margin=6; player.x = Math.max(margin, Math.min(canvas.width - margin - 160, player.x)); player.y = Math.max(margin, Math.min(canvas.height - margin, player.y)); }
 
-/* buy DC & stages (unchanged logic) */
+/* buy DC & stages */
 function buyDataCenter(){ if (coins < dcCost){ safeLog('سکه کافی نداری'); return; } coins -= dcCost; dcCount += 1; dcCost = Math.min(999999999, Math.round(dcCost * 1.6)); const oldMax = playerMaxHP; playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25; const hpIncrease = playerMaxHP - oldMax; playerHP = Math.min(playerMaxHP, playerHP + Math.round(hpIncrease * 0.7)); safeLog('دیتاسنتر خریدی — +25 Max HP و HP فعلی افزایش یافت'); updateUI(); }
 
 function buildStages(){ stagesGrid.innerHTML = ''; for (let s=1;s<=TOTAL_STAGES;s++){ const div=document.createElement('div'); div.style.padding='10px'; div.style.borderRadius='8px'; div.style.background=(s<=unlockedStage)?'#101014':'#0b0b0d'; div.style.border='1px solid rgba(255,255,255,0.03)'; div.style.cursor=(s<=unlockedStage)?'pointer':'not-allowed'; div.innerHTML = '<div style="font-weight:800;color:var(--accent)">مرحله '+s+'</div><div style="font-size:0.85rem;margin-top:6px">'+(s<=4?'آسان':s<=12?'متوسط':s<=24?'سخت':'نهایی')+'</div>'; if (s<=unlockedStage) div.addEventListener('click', ()=>{ startStage(s); closeModal(); }); else div.title='این مرحله قفل است'; stagesGrid.appendChild(div); } }
@@ -647,19 +741,18 @@ function init(){
   setupCanvasDrag();
   handleLoopMovement();
   updateUI();
-  safeLog('جوی‌استیک و کول‌داون اضافه شد — تست کن و بگو تنظیمات چی طوره!');
+  safeLog('سیستم باس‌های متفاوت فعال شد — هر مرحله یک باس جدید میاد! تست کن و گزارش بده :)');
 }
 
 /* small loop to keep movement responsive (separate from raf) */
 let lastMoveTime = performance.now();
 function handleLoopMovement(){
   const now = performance.now(); const dt = (now - lastMoveTime)/1000; lastMoveTime = now;
-  // movement is applied in raf updatePhysics; we just schedule next frame here
   requestAnimationFrame(handleLoopMovement);
 }
 
 window.addEventListener('beforeunload', ()=>{ stopSpawningBullets(); if (rafId) cancelAnimationFrame(rafId); });
-window.__hc = { startStage, buyDataCenter, getState: ()=>({coins,dcCount,dcCost,unlockedStage,playerHP,playerMaxHP,bossHP,currentStage,bossPhase}) };
+window.__hc = { startStage, buyDataCenter, getState: ()=>({coins,dcCount,dcCost,unlockedStage,playerHP,playerMaxHP,bossHP,currentStage,bossPhase,currentBossDef}) };
 
 init();
 </script>
