@@ -1,3 +1,4 @@
+```html name=index.html
 <!doctype html>
 
 <html lang="fa" dir="rtl">
@@ -80,6 +81,7 @@
         </div>
         <button class="btn ghost" id="retreatBtn" style="display:none">فرار</button>
       </div>
+      <div id="itemBar"></div>
       <div class="status"><span id="statusText">آماده</span> — مرحله: <strong id="currentStageText">—</strong></div>
     </div>
 
@@ -124,10 +126,20 @@
     <div id="stagesGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;max-height:60vh;overflow:auto;padding:6px"></div>
     <div style="text-align:center;margin-top:8px"><button class="btn secondary" id="closeStageModal">بستن</button></div>
   </div>
-</div><footer style="width:100%;max-width:1100px;margin-top:12px;text-align:center;color:#cfd8dc">
+</div>
+<!-- Lootbox Modal -->
+<div id="lootboxModal" style="display:none;position:fixed;inset:0;z-index:100;align-items:center;justify-content:center;background:rgba(0,0,0,0.58)">
+  <div style="background:linear-gradient(180deg,#0b0b0d,#101012);padding:22px 18px 18px 18px;border-radius:14px;max-width:340px;width:96%;text-align:center;border:1px solid rgba(255,255,255,0.04)">
+    <h2 style="margin:0 0 16px 0;font-size:1.1rem;color:var(--accent)">صندوق جایزه!</h2>
+    <div id="lootboxContent" style="margin-bottom:14px"></div>
+    <button class="btn" id="openLootboxBtn">باز کردن صندوق</button>
+  </div>
+</div>
+<footer style="width:100%;max-width:1100px;margin-top:12px;text-align:center;color:#cfd8dc">
   <div>نسخه آزمایشی — Cooldown + Joystick</div>
   <div class="made-by">ساخته شده توسط Rob Lucci</div>
-</footer><script>
+</footer>
+<script>
 /* ---------------- Audio (WebAudio helper) ---------------- */
 let audioCtx = null;
 function initAudioContext(){ if (audioCtx) return; try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ audioCtx = null; } }
@@ -186,6 +198,17 @@ const bossDefs = [
 
 let currentBossDef = bossDefs[0];
 
+/* آیتم‌ها و صندوق جایزه */
+const itemDefs = [
+  { id:"heal", name:"درمان فوری", description:"+40 HP", use: ()=>{ playerHP = Math.min(playerMaxHP, playerHP+40); safeLog("از آیتم درمان فوری استفاده کردی!"); updateUI(); } },
+  { id:"shield", name:"سپر موقت", description:"دفع حمله بعدی", use: ()=>{ player.shield = true; safeLog("سپر فعال شد! ضربه بعدی بی‌اثر است."); } },
+  { id:"double", name:"آسیب دوبرابر", description:"حمله بعدی دوبرابر دمیج", use: ()=>{ player.doubleDamage = true; safeLog("حمله بعدی دوبرابر خواهد بود!"); } },
+  { id:"coinBoost", name:"افزایش سکه", description:"دوبرابر سکه تا آخر فایت", use: ()=>{ player.coinBoost = true; safeLog("تا آخر فایت سکه دو برابر!"); } }
+];
+let lootboxItem = null; // آیتمی که از صندوق می‌گیریم
+let lootboxReward = 0; // سکه جایزه صندوق
+let playerItems = []; // آیتم‌های بازیکن
+
 /* DOM */
 const coinsEl = document.getElementById('coins');
 const dcCountEl = document.getElementById('dcCount');
@@ -213,9 +236,13 @@ const timingUI = document.getElementById('timingUI');
 const pointerEl = document.getElementById('pointer');
 const sweetZoneEl = document.getElementById('sweetZone');
 const resetBtn = document.getElementById('resetBtn');
+const lootboxModal = document.getElementById('lootboxModal');
+const lootboxContent = document.getElementById('lootboxContent');
+const openLootboxBtn = document.getElementById('openLootboxBtn');
+const itemBar = document.getElementById('itemBar');
 
 /* player */
-let player = { x:120, y: canvas.height/2, size:18, speed:300, vx:0, vy:0 };
+let player = { x:120, y: canvas.height/2, size:18, speed:300, vx:0, vy:0, shield:false, doubleDamage:false, coinBoost:false };
 
 /* movement control */
 const keys = {};
@@ -228,7 +255,11 @@ const ATTACK_COOLDOWN_MS = 1300;
 let attackCooldownTimer = null;
 
 /* helpers */
-function damageMultiplier(){ return 1 + dcCount * 0.35; }
+function damageMultiplier(){
+  let base = 1 + dcCount * 0.35;
+  if (player.doubleDamage) { base *= 2; player.doubleDamage = false; }
+  return base;
+}
 
 /* UI update */
 function updateUI(){
@@ -247,6 +278,17 @@ function updateUI(){
   saveNumber('hc_dcCount', dcCount);
   saveNumber('hc_dcCost', dcCost);
   saveNumber('hc_unlocked', unlockedStage);
+  // نمایش آیتم‌ها
+  if (itemBar) {
+    itemBar.innerHTML = playerItems.map((it,i)=>`<button class="btn secondary" onclick="useItem(${i})" title="${it.description}">${it.name}</button>`).join(' ');
+  }
+}
+window.useItem = function(idx){
+  const item = playerItems[idx];
+  if (!item) return;
+  item.use();
+  playerItems.splice(idx,1);
+  updateUI();
 }
 
 /* projectiles (with cap) */
@@ -302,6 +344,14 @@ function updatePhysics(dt){
   const playerRect = { x: player.x - player.size/2, y: player.y - player.size/2, w: player.size, h: player.size };
   for (let i=bullets.length-1;i>=0;i--){
     if (rectCircleColliding(bullets[i], playerRect)){
+      // اگر سپر فعال است، ضربه بی‌اثر
+      if (player.shield) {
+        player.shield = false;
+        safeLog("سپر ضربه را دفع کرد!");
+        bullets.splice(i,1);
+        updateUI();
+        continue;
+      }
       const dmg = Math.max(1, Math.round(6 + Math.random()*6));
       playerHP -= dmg;
       playHurt();
@@ -500,11 +550,45 @@ function startStage(stage){
   playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
   playerHP = playerMaxHP;
   bossAlive = true; bullets = [];
+  player.shield = false; player.doubleDamage = false; player.coinBoost = false;
   statusText.innerText = 'مبارزه (مرحله '+stage+')'; retreatBtn.style.display = 'inline-block';
   startSpawningBullets(stage);
   if (!rafId){ lastFrame = performance.now(); rafId = requestAnimationFrame(rafLoop); }
   updateUI();
 }
+
+//--- Lootbox system ---
+function showLootboxModal(coinsReward, item){
+  lootboxContent.innerHTML = `
+    <div style="font-size:1.08rem;margin-bottom:10px">شما یک صندوق جایزه دریافت کردید!</div>
+    <div style="font-size:1.06rem;margin-bottom:7px">
+      <span style="color:gold">+${coinsReward} سکه</span>
+    </div>
+    <div style="margin-bottom:10px">
+      <div style="font-weight:700;color:#0ff">${item.name}</div>
+      <div style="font-size:0.92rem;margin-top:2px;color:#ccc">${item.description}</div>
+    </div>
+  `;
+  lootboxModal.style.display = "flex";
+  openLootboxBtn.disabled = false;
+}
+function closeLootboxModal(){
+  lootboxModal.style.display = "none";
+  lootboxContent.innerHTML = "";
+}
+openLootboxBtn.addEventListener("click", function(){
+  openLootboxBtn.disabled = true;
+  coins += lootboxReward;
+  playerItems.push(lootboxItem);
+  safeLog(`صندوق باز شد! +${lootboxReward} سکه و آیتم: ${lootboxItem.name}`);
+  updateUI();
+  closeLootboxModal();
+  playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
+  playerHP = playerMaxHP;
+  statusText.innerText = 'برنده شدی!';
+  currentStage = 0; updateUI();
+});
+
 function endFight(victory){
   bossAlive = false; stopSpawningBullets(); if (rafId){ cancelAnimationFrame(rafId); rafId=null; }
   bullets = []; retreatBtn.style.display = 'none'; timingUI.style.display='none'; timingUI.setAttribute('aria-hidden','true'); bossWarningEl.style.display='none'; ultimateActive=false;
@@ -512,13 +596,12 @@ function endFight(victory){
   if (moveRafId) { cancelAnimationFrame(moveRafId); moveRafId = null; }
   if (victory){
     playWin();
-    const reward = Math.round(100 * Math.max(1,currentStage) * (1 + dcCount*0.08));
-    coins += reward;
-    safeLog('تبریک! ' + currentBossDef.name + ' شکست خورد — +' + reward + ' سکه');
+    const baseReward = Math.round(100 * Math.max(1,currentStage) * (1 + dcCount*0.08));
+    // جایزه سکه و آیتم را به جای مستقیم، داخل صندوق بده
+    lootboxReward = player.coinBoost ? baseReward * 2 : baseReward;
+    lootboxItem = itemDefs[Math.floor(Math.random()*itemDefs.length)];
+    showLootboxModal(lootboxReward, lootboxItem);
     if (currentStage < TOTAL_STAGES && unlockedStage <= currentStage) unlockedStage = currentStage + 1;
-    playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
-    playerHP = playerMaxHP;
-    statusText.innerText = 'برنده شدی!';
   } else {
     const loss = Math.min(coins, Math.round(10 * Math.max(1,currentStage)));
     coins -= loss;
@@ -526,8 +609,8 @@ function endFight(victory){
     playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
     playerHP = Math.max(1, Math.round(playerMaxHP * 0.3));
     statusText.innerText = 'شکست خوردی';
+    currentStage = 0; updateUI();
   }
-  currentStage = 0; updateUI();
 }
 
 /* retreat */
@@ -591,7 +674,7 @@ function startTimingMinigame(){
     else if (quality === 1) baseDamage = Math.round(16 + Math.random()*8);
     else baseDamage = Math.round(6 + Math.random()*6);
 
-    const dmg = Math.round(baseDamage * damageMultiplier());
+    let dmg = Math.round(baseDamage * damageMultiplier());
     bossHP -= dmg;
     updateBossPhase();
     const reward = Math.round(8 * Math.max(1,currentStage) * (1 + quality*0.25));
@@ -711,3 +794,4 @@ window.__hc = { startStage, buyDataCenter, getState: ()=>({coins,dcCount,dcCost,
 init();
 </script></body>
 </html>
+```
