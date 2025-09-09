@@ -1,3 +1,4 @@
+document.addEventListener('DOMContentLoaded', function() {
 // Happy Coin: Crypto War - JavaScript (کد کامل بازی)
 // نویسنده: Rob Lucci
 
@@ -106,7 +107,6 @@ function stopSpawningBullets() {
 }
 function chooseAndExecutePattern(stage) {
   // حملات ساده (شبیه bullet hell ساده)
-  // اینجا برای سادگی فقط یک حمله ساده رسم می‌شود
   playBeep(120+stage*10, 0.11, "square", 0.09);
   // شلیک گلوله فرضی (در نسخه واقعی می‌تونی گرافیک اضافه کنی)
   if (Math.random()<0.04+stage*0.04 && !ultimateUsed && bossAlive) {
@@ -245,4 +245,5 @@ retreatBtn.onclick = function(){
 
 // شروع بازی
 startFight(1);
-</script>
+
+}); // پایان DOMContentLoaded
