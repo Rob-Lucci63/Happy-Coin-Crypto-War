@@ -749,9 +749,14 @@ function setupCanvasDrag(){
   canvas.addEventListener('mousedown', (e)=>{ down(e); window.addEventListener('mousemove', move); window.addEventListener('mouseup', ()=>{ up(); window.removeEventListener('mousemove', move); }); });
 }
 
-/* clamp player */
-function clampPlayerToCanvas(){ const margin=6; const bossZoneWidth = 140; player.x = Math.max(margin, Math.min(canvas.width - margin - bossZoneWidth, player.x)); player.y = Math.max(margin, Math.min(canvas.height - margin, player.y)); }
-
+function clampPlayerToCanvas(){ 
+  // حرکت بازیکن فقط در ۶۰٪ وسط صفحه مجاز است
+  const marginX = Math.floor(canvas.width * 0.2); // ۲۰٪ چپ و راست غیرقابل دسترسی
+  const marginY = Math.floor(canvas.height * 0.2); // ۲۰٪ بالا و پایین غیرقابل دسترسی
+  const bossZoneWidth = 140; // فاصله از باس
+  player.x = Math.max(marginX, Math.min(canvas.width - marginX - bossZoneWidth, player.x)); 
+  player.y = Math.max(marginY, Math.min(canvas.height - marginY, player.y)); 
+  }
 /* buy DC & stages */
 function buyDataCenter(){ if (coins < dcCost){ safeLog('سکه کافی نداری'); return; } coins -= dcCost; dcCount += 1; dcCost = Math.min(999999999, Math.round(dcCost * 1.6)); const oldMax = playerMaxHP; playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25; const hpIncrease = playerMaxHP - oldMax; playerHP = Math.min(playerMaxHP, playerHP + Math.round(hpIncrease * 0.7)); safeLog('دیتاسنتر خریدی — +25 Max HP و HP فعلی افزایش یافت'); updateUI(); }
 
