@@ -3,8 +3,58 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Happy Coin: Crypto War (Fixed)</title>
-<link rel="stylesheet" href="style.css">
+<title>Happy Coin: Crypto War (Enhanced)</title>
+<style>
+  :root{
+    --bg1:#070709; --bg2:#121217; --accent:#00ffea; --danger:#ff4c6b; --muted:#222;
+  }
+  *{box-sizing:border-box;font-family:Tahoma, Arial, sans-serif}
+  body{
+    margin:0; min-height:100vh; background:linear-gradient(180deg,var(--bg1),var(--bg2));
+    color:#e9eef0; display:flex; flex-direction:column; align-items:center; gap:12px; padding:18px;
+  }
+  header{width:100%; max-width:1100px; display:flex; justify-content:space-between; align-items:center; gap:8px}
+  h1{color:var(--accent); font-size:1.3rem; margin:0}
+  .top-stats{display:flex; gap:10px; align-items:center; font-size:0.95rem}
+  .chip{background:#0e0e10;padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
+  main{width:100%; max-width:1100px; display:flex; flex-direction:column; align-items:center; gap:12px}
+  .card{width:100%; background:linear-gradient(180deg,#0b0b0d, #101012); border-radius:12px; padding:14px; box-shadow:0 6px 20px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.03)}
+  .battle-area{display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap; width:100%}
+  .arena{background:linear-gradient(180deg,#0d0d0f,#0b0b0d); border-radius:10px; padding:12px; display:flex; flex-direction:column; align-items:center; width:100%; max-width:720px; position:relative}
+  canvas{background:transparent; border-radius:8px; display:block; touch-action: none;}
+  .hud{width:100%; display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:8px}
+  .controls{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  .btn{background:var(--accent); color:#001; border:none; padding:10px 14px; border-radius:8px; font-weight:700; cursor:pointer; transition: transform 150ms ease, opacity 150ms ease;}
+  .btn:active{transform: scale(0.96);} /* انیمیشن کلیک دکمه */
+  .btn.secondary{background:#222; color:#eaeaea; border:1px solid rgba(255,255,255,0.03)}
+  .btn.ghost{background:transparent; border:1px dashed rgba(255,255,255,0.04)}
+  .btn[disabled]{opacity:0.45; cursor:not-allowed; transform: scale(1);}
+  .status{font-size:0.95rem}
+  .log{background:#0b0b0d; width:100%; max-width:980px; padding:12px; border-radius:10px; font-size:0.9rem; max-height:220px; overflow:auto; border:1px solid rgba(255,255,255,0.02)}
+  .small{font-size:0.87rem; opacity:0.9}
+  .made-by{font-weight:700; color:#ffd59a; margin-top:6px}
+  .timing-ui{width:100%; max-width:400px; height:36px; background:#111; border-radius:8px; border:1px solid rgba(255,255,255,0.04); position:relative; overflow:hidden; margin-top:10px}
+  .timing-bar-pointer{position:absolute; top:0; bottom:0; width:6px; background:var(--accent); transform:translateX(-50%); left:0}
+  .timing-bar-sweet{position:absolute; top:6px; bottom:6px; height:calc(100% - 12px); border-radius:6px; background:rgba(0,255,170,0.18); left:40%; width:20%;}
+  .attack-cooldown{position:relative; height:6px; background:rgba(255,255,255,0.04); border-radius:6px; margin-top:6px; overflow:hidden;}
+  .attack-cooldown > i{position:absolute; left:0; top:0; bottom:0; width:0%; background:linear-gradient(90deg,var(--accent),#7d00b2); transition:width 120ms linear;}
+  /* Joystick */
+  .joystick-wrap{position:fixed; left:14px; bottom:14px; width:120px; height:120px; border-radius:999px; z-index:80; display:flex; align-items:center; justify-content:center; touch-action:none}
+  .joy-base{width:120px;height:120px;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border:2px solid rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;opacity:0.95}
+  .joy-knob{width:48px;height:48px;border-radius:999px;background:var(--accent);box-shadow:0 6px 18px rgba(0,255,234,0.08);transform:translate(0,0);transition:transform 0s;}
+  .joy-label{position:absolute;left:14px;bottom:140px;color:#cfd8dc;font-size:0.8rem;opacity:0.95}
+  /* boss warning */
+  .boss-warning{position:absolute; left:50%; transform:translateX(-50%); top:12px; padding:8px 12px; background:rgba(255,0,70,0.12); border-radius:8px; border:1px solid rgba(255,0,70,0.18); color:#ffd0d9; display:none; z-index:30}
+  .hp-bar{height:10px;background:rgba(255,255,255,0.04);border-radius:8px;overflow:hidden;margin-top:6px}
+  .hp-bar .fill{height:100%;width:100%;background:linear-gradient(90deg,#ff6b6b,#ffb86b); transition: width 300ms ease-out;} /* انیمیشن نوار HP */
+  /* Modal Animation */
+  .modal-base{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;padding:18px;z-index:60; opacity: 0; transition: opacity 250ms ease;}
+  .modal-base.visible{opacity: 1;}
+  .modal-content{background:linear-gradient(180deg,#0b0b0d,#0f0f11);padding:14px;border-radius:10px;max-width:720px;width:100%;border:1px solid rgba(255,255,255,0.03); transform: scale(0.95); transition: transform 250ms ease;}
+  .modal-base.visible .modal-content{transform: scale(1);}
+
+  @media (max-width:720px){ .joystick-wrap{left:10px;bottom:10px; width:100px;height:100px} .joy-base{width:100px;height:100px} .joy-knob{width:44px;height:44px} }
+</style>
 </head>
 <body>
 <header>
@@ -14,9 +64,7 @@
     <div class="chip">دیتاسنتر: <strong id="dcCount">0</strong></div>
     <div class="chip">قیمت بعدی DC: <strong id="dcCost">50</strong> 🪙</div>
   </div>
-</header>
-
-<main>
+</header><main>
   <section class="card">
     <div class="battle-area">
       <div class="arena" id="arenaContainer" aria-live="polite" style="position:relative">
@@ -24,87 +72,755 @@
         <div class="arena-top" style="width:100%;display:flex;justify-content:space-between">
           <div class="hp">باس: <span id="bossHPText">HP: 300</span></div>
           <div class="hp">تو: <span id="playerHPText">HP: 100</span></div>
-        </div>
-        <canvas id="arenaCanvas" width="720" height="360" style="max-width:100%; width:100%; height:auto;"></canvas>
+        </div><canvas id="arenaCanvas" width="720" height="360" style="max-width:100%; width:100%; height:auto;"></canvas>
 
-        <div class="hud">
-          <div class="controls" style="align-items:flex-end">
-            <div style="display:flex;flex-direction:column;gap:6px">
-              <button class="btn" id="attackBtn">حمله (Space)</button>
-              <div class="attack-cooldown" title="کول‌داون حمله"><i id="attackCooldownFill" style="width:0%"></i></div>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:6px">
-              <button class="btn secondary" id="actBtn">Act</button>
-              <button class="btn secondary" id="buyDCBtn">خرید دیتاسنتر</button>
-            </div>
-            <button class="btn ghost" id="retreatBtn" style="display:none">فرار</button>
-          </div>
-          <div id="itemBar"></div>
-          <div class="status"><span id="statusText">آماده</span> — مرحله: <strong id="currentStageText">—</strong></div>
+    <div class="hud">
+      <div class="controls" style="align-items:flex-end">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn" id="attackBtn">حمله (Space)</button>
+          <div class="attack-cooldown" title="کول‌داون حمله"><i id="attackCooldownFill" style="width:0%"></i></div>
         </div>
-
-        <div id="timingUI" class="timing-ui" style="display:none" aria-hidden="true">
-          <div id="sweetZone" class="timing-bar-sweet"></div>
-          <div id="pointer" class="timing-bar-pointer" style="left:0px"></div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn secondary" id="actBtn">Act</button>
+          <button class="btn secondary" id="buyDCBtn">خرید دیتاسنتر</button>
         </div>
+        <button class="btn ghost" id="retreatBtn" style="display:none">فرار</button>
       </div>
+      <div id="itemBar"></div>
+      <div class="status"><span id="statusText">آماده</span> — مرحله: <strong id="currentStageText">—</strong></div>
+    </div>
 
-      <div style="flex:1; max-width:360px;">
-        <div class="card" style="margin-bottom:12px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div>جزئیات باس: <span id="bossName" class="small" style="font-weight:800;color:var(--accent)">—</span></div>
-            <div class="small">فاز: <span id="bossPhaseText">1</span></div>
-          </div>
-          <div class="hp-bar" style="margin-top:8px"><div id="bossHPFill" class="fill" style="width:100%"></div></div>
-          <div style="height:8px"></div>
-          <div class="log" id="log">&gt; خوش آمدی! با جوی‌استیک جاخالی بده و با Space حمله کن.</div>
-        </div>
+    <div id="timingUI" class="timing-ui" style="display:none" aria-hidden="true">
+      <div id="sweetZone" class="timing-bar-sweet"></div>
+      <div id="pointer" class="timing-bar-pointer" style="left:0px"></div>
+    </div>
+  </div>
 
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <div>کنترل‌ها</div>
-            <div class="small">حرکت: فلش‌ها یا جوی‌استیک / حمله: Space یا دکمه</div>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn secondary" id="openStagesBtn">انتخاب مرحله</button>
-            <button class="btn secondary" id="resetBtn">ریست ذخیره</button>
-          </div>
-        </div>
+  <div style="flex:1; max-width:360px;">
+    <div class="card" style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>جزئیات باس: <span id="bossName" class="small" style="font-weight:800;color:var(--accent)">—</span></div>
+        <div class="small">فاز: <span id="bossPhaseText">1</span></div>
+      </div>
+      <div class="hp-bar" style="margin-top:8px"><div id="bossHPFill" class="fill" style="width:100%"></div></div>
+      <div style="height:8px"></div>
+      <div class="log" id="log">&gt; خوش آمدی! با جوی‌استیک جاخالی بده و با Space حمله کن.</div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div>کنترل‌ها</div>
+        <div class="small">حرکت: فلش‌ها یا جوی‌استیک / حمله: Space یا دکمه</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn secondary" id="openStagesBtn">انتخاب مرحله</button>
+        <button class="btn secondary" id="resetBtn">ریست ذخیره</button>
       </div>
     </div>
-  </section>
-</main>
+  </div>
+</div>
 
-<!-- joystick -->
-<div class="joystick-wrap" id="joystickWrap" aria-hidden="false">
+  </section>
+</main><!-- joystick --><div class="joystick-wrap" id="joystickWrap" aria-hidden="false">
   <div class="joy-base" id="joyBase">
     <div class="joy-knob" id="joyKnob" role="slider" aria-label="جوی‌استیک حرکت"></div>
   </div>
 </div>
-
 <!-- Stages modal -->
-<div id="stageModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;padding:18px;z-index:60">
-  <div style="background:linear-gradient(180deg,#0b0b0d,#0f0f11);padding:14px;border-radius:10px;max-width:720px;width:100%;border:1px solid rgba(255,255,255,0.03)">
+<div id="stageModal" class="modal-base">
+  <div class="modal-content">
     <h3 style="margin:0 0 8px 0">انتخاب مرحله</h3>
     <div id="stagesGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;max-height:60vh;overflow:auto;padding:6px"></div>
     <div style="text-align:center;margin-top:8px"><button class="btn secondary" id="closeStageModal">بستن</button></div>
   </div>
 </div>
-
 <!-- Lootbox Modal -->
-<div id="lootboxModal" style="display:none;position:fixed;inset:0;z-index:100;align-items:center;justify-content:center;background:rgba(0,0,0,0.58)">
-  <div style="background:linear-gradient(180deg,#0b0b0d,#101012);padding:22px 18px 18px 18px;border-radius:14px;max-width:340px;width:96%;text-align:center;border:1px solid rgba(255,255,255,0.04)">
+<div id="lootboxModal" class="modal-base" style="z-index:100">
+  <div class="modal-content" style="max-width:340px;text-align:center;padding:22px 18px 18px 18px;">
     <h2 style="margin:0 0 16px 0;font-size:1.1rem;color:var(--accent)">صندوق جایزه!</h2>
     <div id="lootboxContent" style="margin-bottom:14px"></div>
     <button class="btn" id="openLootboxBtn">باز کردن صندوق</button>
   </div>
 </div>
-
 <footer style="width:100%;max-width:1100px;margin-top:12px;text-align:center;color:#cfd8dc">
   <div>نسخه آزمایشی — Cooldown + Joystick</div>
   <div class="made-by">ساخته شده توسط Rob Lucci</div>
 </footer>
+<script>
+/* ---------------- Audio (WebAudio helper) ---------------- */
+let audioCtx = null;
+function initAudioContext(){ if (audioCtx) return; try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ audioCtx = null; } }
+function ensureAudioResume(){ if (!audioCtx) initAudioContext(); if (!audioCtx) return; if (audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{}); }
+function playBeep(freq, duration=0.12, type='sine', volume=0.12){ if (!audioCtx) initAudioContext(); if (!audioCtx) return; const now = audioCtx.currentTime; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type = type; o.frequency.value = freq; g.gain.value = volume; o.connect(g); g.connect(audioCtx.destination); g.gain.setValueAtTime(volume, now); g.gain.exponentialRampToValueAtTime(0.0001, now + duration); o.start(now); o.stop(now + duration + 0.02); }
+function playAttack(){ ensureAudioResume(); playBeep(640,0.08,'sawtooth',0.12); setTimeout(()=>playBeep(940,0.06,'sine',0.10),80); }
+function playHurt(){ ensureAudioResume(); playBeep(160,0.12,'square',0.16); setTimeout(()=>playBeep(220,0.09,'sawtooth',0.08),40); }
+function playWin(){ ensureAudioResume(); const now = audioCtx.currentTime; const freqs=[440,660,880]; const gain = audioCtx.createGain(); gain.gain.value=0.14; gain.connect(audioCtx.destination); const oscs=freqs.map(f=>{const o=audioCtx.createOscillator(); o.type='sine'; o.frequency.value=f; o.connect(gain); return o;}); oscs.forEach(o=>o.start(now)); gain.gain.setValueAtTime(0.14, now); gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.7); oscs.forEach(o=>o.stop(now + 0.72)); }
+(function attachAutoResume(){ const resume = ()=>{ ensureAudioResume(); document.removeEventListener('pointerdown', resume); document.removeEventListener('keydown', resume); }; document.addEventListener('pointerdown', resume); document.addEventListener('keydown', resume); })();
 
-<script src="game.js"></script>
+/* ---------------- storage & log ---------------- */
+function readNumber(k,f){ try{ const v=localStorage.getItem(k); if(v===null) return f; const n=Number(v); return isNaN(n)?f:n; }catch(e){return f;} }
+function saveNumber(k,v){ try{ localStorage.setItem(k,String(v)); }catch(e){} }
+function safeLog(msg){ const el=document.getElementById('log'); const esc=String(msg).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); el.innerHTML = '> ' + esc + '<br>' + el.innerHTML; }
+
+/* ---------------- game state ---------------- */
+const TOTAL_STAGES = 34;
+let coins = readNumber('hc_coins', 0);
+let dcCount = readNumber('hc_dcCount', 0);
+let dcCost = readNumber('hc_dcCost', 50);
+let unlockedStage = readNumber('hc_unlocked', 1) || 1;
+
+const BASE_PLAYER_MAX_HP = 100;
+let playerMaxHP = BASE_PLAYER_MAX_HP + dcCount * 25;
+let playerHP = playerMaxHP;
+let displayedPlayerHP = playerHP; // برای انیمیشن
+let displayedBossHP = 0; // برای انیمیشن
+
+let currentStage = 0;
+let bossMaxHP = 300;
+let bossHP = bossMaxHP;
+
+let bossAlive = false;
+let spawnIntervalId = null;
+let rafId = null;
+let bullets = [];
+
+let bossPhase = 1;
+let spiralOffset = 0;
+let ultimateUsed = false;
+let ultimateActive = false;
+
+/* performance & control */
+const MAX_BULLETS = 700;
+let moveRafId = null;
+
+/* ---------------- boss definitions (unique per stage) ---------------- */
+const bossDefs = [
+  { id:'inferno', name:'اينفرنو دراگون', color:'rgba(255,100,60,0.95)', hpMult:1.0, pattern:'fireballs' },
+  { id:'shadow',  name:'آسانسین سایه', color:'rgba(160,80,200,0.95)', hpMult:1.05, pattern:'dashes' },
+  { id:'slime',   name:'سمی اسلایم', color:'rgba(90,200,110,0.95)', hpMult:1.12, pattern:'poison' },
+  { id:'storm',   name:'تایتان طوفان', color:'rgba(80,160,255,0.95)', hpMult:1.18, pattern:'lightning' },
+  { id:'mecha',   name:'مکا گولم', color:'rgba(180,180,200,0.95)', hpMult:1.25, pattern:'lasers' },
+  { id:'void',    name:'اِووید وُید', color:'rgba(220,60,220,0.95)', hpMult:1.3, pattern:'spiral' },
+  { id:'rock',    name:'راک کلنگ', color:'rgba(200,140,80,0.95)', hpMult:1.35, pattern:'boulder' },
+  { id:'oracle',  name:'نَبّی برق', color:'rgba(255,240,100,0.95)', hpMult:1.45, pattern:'lightBurst' },
+];
+
+let currentBossDef = bossDefs[0];
+
+/* آیتم‌ها و صندوق جایزه */
+const itemDefs = [
+  { id:"heal", name:"درمان فوری", description:"+40 HP", use: ()=>{ playerHP = Math.min(playerMaxHP, playerHP+40); safeLog("از آیتم درمان فوری استفاده کردی!"); updateUI(); } },
+  { id:"shield", name:"سپر موقت", description:"دفع حمله بعدی", use: ()=>{ player.shield = true; safeLog("سپر فعال شد! ضربه بعدی بی‌اثر است."); } },
+  { id:"double", name:"آسیب دوبرابر", description:"حمله بعدی دوبرابر دمیج", use: ()=>{ player.doubleDamage = true; safeLog("حمله بعدی دوبرابر خواهد بود!"); } },
+  { id:"coinBoost", name:"افزایش سکه", description:"دوبرابر سکه تا آخر فایت", use: ()=>{ player.coinBoost = true; safeLog("تا آخر فایت سکه دو برابر!"); } }
+];
+let lootboxItem = null;
+let lootboxReward = 0;
+let playerItems = [];
+
+/* DOM */
+const coinsEl = document.getElementById('coins');
+const dcCountEl = document.getElementById('dcCount');
+const dcCostEl = document.getElementById('dcCost');
+const bossHPText = document.getElementById('bossHPText');
+const playerHPText = document.getElementById('playerHPText');
+const statusText = document.getElementById('statusText');
+const currentStageText = document.getElementById('currentStageText');
+const bossPhaseTextEl = document.getElementById('bossPhaseText');
+const bossWarningEl = document.getElementById('bossWarning');
+const bossNameEl = document.getElementById('bossName');
+const bossHPFillEl = document.getElementById('bossHPFill');
+
+const canvas = document.getElementById('arenaCanvas');
+const ctx = canvas.getContext('2d');
+const attackBtn = document.getElementById('attackBtn');
+const attackCooldownFill = document.getElementById('attackCooldownFill');
+const buyDCBtn = document.getElementById('buyDCBtn');
+const retreatBtn = document.getElementById('retreatBtn');
+const openStagesBtn = document.getElementById('openStagesBtn');
+const stageModal = document.getElementById('stageModal');
+const stagesGrid = document.getElementById('stagesGrid');
+const closeStageModal = document.getElementById('closeStageModal');
+const timingUI = document.getElementById('timingUI');
+const pointerEl = document.getElementById('pointer');
+const sweetZoneEl = document.getElementById('sweetZone');
+const resetBtn = document.getElementById('resetBtn');
+const lootboxModal = document.getElementById('lootboxModal');
+const lootboxContent = document.getElementById('lootboxContent');
+const openLootboxBtn = document.getElementById('openLootboxBtn');
+const itemBar = document.getElementById('itemBar');
+
+/* player */
+let player = { x:120, y: canvas.height/2, size:18, speed:300, vx:0, vy:0, shield:false, doubleDamage:false, coinBoost:false, hurtTimer: 0 };
+let bossFlashTimer = 0; // انیمیشن باس
+
+/* movement control */
+const keys = {};
+let joystickActive = false;
+let joyDir = { x:0, y:0 };
+
+/* cooldown */
+let attackReady = true;
+const ATTACK_COOLDOWN_MS = 1300;
+let attackCooldownTimer = null;
+
+/* helpers */
+function damageMultiplier(){
+  let base = 1 + dcCount * 0.35;
+  if (player.doubleDamage) { base *= 2; player.doubleDamage = false; }
+  return base;
+}
+
+/* UI update */
+function updateUI(){
+  coinsEl.innerText = Math.round(coins);
+  dcCountEl.innerText = dcCount;
+  dcCostEl.innerText = Math.round(dcCost);
+  // HP texts use real values
+  bossHPText.innerText = 'HP: ' + Math.max(0,Math.round(bossHP)) + ' / ' + Math.round(bossMaxHP);
+  playerHPText.innerText = 'HP: ' + Math.max(0,Math.round(playerHP)) + ' / ' + Math.round(playerMaxHP);
+  
+  currentStageText.innerText = currentStage ? currentStage : '—';
+  bossPhaseTextEl.innerText = bossPhase;
+  bossNameEl.innerText = currentBossDef ? currentBossDef.name : '—';
+
+  // HP bars use displayed values for smooth animation
+  const bossPct = bossMaxHP ? Math.max(0, Math.min(1, displayedBossHP / bossMaxHP)) : 0;
+  bossHPFillEl.style.width = (bossPct * 100) + '%';
+  
+  saveNumber('hc_coins', coins);
+  saveNumber('hc_dcCount', dcCount);
+  saveNumber('hc_dcCost', dcCost);
+  saveNumber('hc_unlocked', unlockedStage);
+
+  if (itemBar) {
+    itemBar.innerHTML = playerItems.map((it,i)=>`<button class="btn secondary" onclick="useItem(${i})" title="${it.description}">${it.name}</button>`).join(' ');
+  }
+}
+window.useItem = function(idx){
+  const item = playerItems[idx];
+  if (!item) return;
+  item.use();
+  playerItems.splice(idx,1);
+  updateUI();
+}
+
+/* projectiles (with cap) */
+function pushBullet(obj){ if (bullets.length < MAX_BULLETS) bullets.push(obj); }
+function spawnBulletAt(angle, speed, size=8, color='rgba(255,80,80,0.95)'){
+  const spawnX = canvas.width - 60, spawnY = canvas.height / 2;
+  const finalSpeed = speed * 1.05; // افزایش 5% سرعت گلوله‌ها
+  pushBullet({ x:spawnX, y:spawnY, vx:Math.cos(angle)*finalSpeed, vy:Math.sin(angle)*finalSpeed, r:size, color });
+}
+function spawnBulletFrom(x,y,vx,vy,r=6,color='rgba(255,120,60,0.95)'){
+    const finalVx = vx * 1.05; // افزایش 5% سرعت گلوله‌ها
+    const finalVy = vy * 1.05;
+    pushBullet({x,y,vx:finalVx,vy:finalVy,r,color});
+}
+function cleanupBullets(){ bullets = bullets.filter(b => b.x + b.r > -100 && b.x - b.r < canvas.width + 100 && b.y + b.r > -100 && b.y - b.r < canvas.height + 100); }
+
+/* collisions */
+function rectCircleColliding(circle, rect){
+  const distX = Math.abs(circle.x - (rect.x + rect.w/2));
+  const distY = Math.abs(circle.y - (rect.y + rect.h/2));
+  if (distX > (rect.w/2 + circle.r)) return false;
+  if (distY > (rect.h/2 + circle.r)) return false;
+  if (distX <= (rect.w/2)) return true;
+  if (distY <= (rect.h/2)) return true;
+  const dx = distX - rect.w/2, dy = distY - rect.h/2;
+  return (dx*dx + dy*dy <= (circle.r*circle.r));
+}
+
+/* render + physics */
+let lastFrame = performance.now();
+function rafLoop(now){
+  const dt = (now - lastFrame) / 1000;
+  lastFrame = now;
+  updatePhysics(dt);
+  render();
+  rafId = requestAnimationFrame(rafLoop);
+}
+function updatePhysics(dt){
+  // Smooth HP bar animations
+  if (Math.abs(displayedBossHP - bossHP) > 0.1) displayedBossHP += (bossHP - displayedBossHP) * (1 - Math.exp(-10 * dt)); else displayedBossHP = bossHP;
+  if (Math.abs(displayedPlayerHP - playerHP) > 0.1) displayedPlayerHP += (playerHP - displayedPlayerHP) * (1 - Math.exp(-10 * dt)); else displayedPlayerHP = playerHP;
+
+  for (const b of bullets){ b.x += b.vx * dt; b.y += b.vy * dt; }
+  cleanupBullets();
+
+  if (joystickActive){
+    player.vx = joyDir.x * player.speed;
+    player.vy = joyDir.y * player.speed;
+    player.x += player.vx * dt;
+    player.y += player.vy * dt;
+  } else {
+    let dx=0, dy=0;
+    if (keys['ArrowLeft']||keys['a']||keys['A']) dx -= 1;
+    if (keys['ArrowRight']||keys['d']||keys['D']) dx += 1;
+    if (keys['ArrowUp']||keys['w']||keys['W']) dy -= 1;
+    if (keys['ArrowDown']||keys['s']||keys['S']) dy += 1;
+    const len = Math.hypot(dx,dy);
+    if (len > 0){ dx /= len; dy /= len; player.vx = dx * player.speed; player.vy = dy * player.speed; player.x += player.vx * dt; player.y += player.vy * dt; } else { player.vx = 0; player.vy = 0; }
+  }
+  clampPlayerToCanvas();
+
+  const playerRect = { x: player.x - player.size/2, y: player.y - player.size/2, w: player.size, h: player.size };
+  for (let i=bullets.length-1;i>=0;i--){
+    if (rectCircleColliding(bullets[i], playerRect)){
+      if (player.shield) {
+        player.shield = false;
+        safeLog("سپر ضربه را دفع کرد!");
+        bullets.splice(i,1);
+        updateUI();
+        continue;
+      }
+      const dmg = Math.max(1, Math.round(6 + Math.random()*6));
+      playerHP -= dmg;
+      player.hurtTimer = 0.25; // زمان انیمیشن دریافت ضربه
+      playHurt();
+      safeLog('حمله خوردی — ' + dmg + ' دمیج');
+      bullets.splice(i,1);
+      if (playerHP <= 0){ playerHP = 0; updateUI(); endFight(false); return; }
+      updateUI();
+    }
+  }
+  // Update animation timers
+  if (player.hurtTimer > 0) player.hurtTimer -= dt;
+  if (bossFlashTimer > 0) bossFlashTimer -= dt;
+}
+function render(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const bossX = canvas.width - 60, bossY = canvas.height/2;
+
+  // Boss render
+  ctx.save();
+  if (bossFlashTimer > 0) {
+    const flashAlpha = Math.sin(bossFlashTimer * Math.PI * 4); // Creates a flashing effect
+    ctx.globalAlpha = 1 - flashAlpha * 0.7;
+  }
+  // boss aura
+  ctx.beginPath(); ctx.fillStyle = (ultimateActive ? 'rgba(255,40,80,0.16)' : currentBossDef.color.replace('0.95','0.12')); ctx.arc(bossX, bossY, 36 + (bossPhase-1)*2, 0, Math.PI*2); ctx.fill();
+  // boss body
+  ctx.beginPath(); ctx.fillStyle = currentBossDef.color; ctx.arc(bossX, bossY, 24 + (bossPhase-1)*2, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  // Player render
+  ctx.save();
+  if (player.hurtTimer > 0) {
+    const intensity = player.hurtTimer / 0.25;
+    ctx.fillStyle = `rgba(255, 0, 0, ${intensity * 0.7})`;
+    ctx.fillRect(player.x - player.size/2, player.y - player.size/2, player.size, player.size);
+    // Shake effect
+    const shakeX = Math.sin(player.hurtTimer * 100) * 2;
+    const shakeY = Math.cos(player.hurtTimer * 100) * 2;
+    ctx.translate(shakeX, shakeY);
+  }
+  ctx.fillStyle = player.shield ? 'rgba(0,255,234,0.95)' : 'rgba(255,255,255,0.95)';
+  ctx.fillRect(player.x - player.size/2, player.y - player.size/2, player.size, player.size);
+  ctx.restore();
+
+  // Bullets render
+  for (const b of bullets){
+    ctx.beginPath();
+    ctx.fillStyle = b.color;
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+/* game logic */
+function clampPlayerToCanvas(){
+  player.x = Math.max(player.size/2, Math.min(canvas.width/2 - player.size/2, player.x));
+  player.y = Math.max(player.size/2, Math.min(canvas.height - player.size/2, player.y));
+}
+function startFight(stage){
+  if (bossAlive) return;
+  currentStage = stage;
+  currentBossDef = bossDefs[(stage-1) % bossDefs.length];
+  bossMaxHP = Math.round(300 * currentBossDef.hpMult * (1 + (stage-1) * 0.15));
+  bossHP = bossMaxHP;
+  displayedBossHP = bossHP;
+  playerHP = playerMaxHP;
+  displayedPlayerHP = playerHP;
+  bossAlive = true;
+  bullets = [];
+  bossPhase = 1;
+  ultimateUsed = false;
+  ultimateActive = false;
+  player.coinBoost = false;
+  player.shield = false;
+  player.doubleDamage = false;
+  player.hurtTimer = 0;
+  
+  safeLog(`شروع فایت: مرحله ${stage} - ${currentBossDef.name}`);
+  updateUI();
+  
+  // Start boss attack interval (slightly faster: 900ms -> 850ms)
+  const baseInterval = 850; 
+  spawnIntervalId = setInterval(bossAttack, baseInterval / (1 + (stage-1) * 0.02)); 
+  
+  if (!rafId) { lastFrame = performance.now(); rafLoop(lastFrame); }
+  
+  // Close modal with animation
+  stageModal.classList.remove('visible');
+  setTimeout(() => stageModal.style.display = 'none', 250);
+}
+function endFight(win){
+  bossAlive = false;
+  clearInterval(spawnIntervalId);
+  spawnIntervalId = null;
+  // Cancel RAF
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = null;
+
+  if (win){
+    playWin();
+    safeLog(`پیروزی! مرحله ${currentStage} با موفقیت شکست خورد.`);
+    if (currentStage === unlockedStage) unlockedStage = Math.min(TOTAL_STAGES, unlockedStage + 1);
+    
+    // Lootbox logic
+    lootboxReward = Math.round(bossMaxHP / 10 + Math.random() * 20);
+    if (player.coinBoost) lootboxReward *= 2;
+    
+    const itemIndex = Math.floor(Math.random() * itemDefs.length);
+    lootboxItem = itemDefs[itemIndex];
+
+    lootboxContent.innerHTML = `
+      <p style="font-size:1.1rem;margin-bottom:8px">شما برنده شدید!</p>
+      <p style="font-size:1.4rem;color:var(--accent)">${lootboxReward} 🪙 رمز ارز</p>
+      <p style="font-size:1.1rem;color:#ffd59a">و یک آیتم: ${lootboxItem.name}</p>
+    `;
+
+    lootboxModal.style.display = 'flex';
+    setTimeout(() => lootboxModal.classList.add('visible'), 10);
+
+  } else {
+    safeLog(`شکست! مرحله ${currentStage} شما را شکست داد.`);
+    currentStage = 0;
+    updateUI();
+  }
+}
+function openLootbox(){
+  coins += lootboxReward;
+  playerItems.push(lootboxItem);
+  safeLog(`+${lootboxReward} 🪙 و آیتم ${lootboxItem.name} به دست آمد.`);
+  
+  lootboxModal.classList.remove('visible');
+  setTimeout(() => lootboxModal.style.display = 'none', 250);
+  
+  updateUI();
+  currentStage = 0;
+}
+
+function bossAttack(){
+  if (!bossAlive) return;
+
+  // Phase transition
+  if (bossPhase === 1 && bossHP < bossMaxHP * 0.6) {
+    bossPhase = 2;
+    safeLog("باس وارد فاز ۲ شد! حملات شدیدتر می‌شوند.");
+  } else if (bossPhase === 2 && bossHP < bossMaxHP * 0.3) {
+    bossPhase = 3;
+    safeLog("باس وارد فاز نهایی شد! مراقب باشید.");
+  }
+  
+  // Ultimate attack warning
+  if (bossPhase >= 2 && !ultimateUsed && bossHP < bossMaxHP * 0.5 && Math.random() < 0.3) {
+    ultimateUsed = true;
+    ultimateActive = true;
+    bossWarningEl.style.display = 'block';
+    safeLog("!!! حمله نهایی باس فعال شد !!!");
+    setTimeout(() => {
+      ultimateActive = false;
+      bossWarningEl.style.display = 'none';
+      safeLog("حمله نهایی باس به پایان رسید.");
+    }, 5000);
+  }
+
+  // Attack patterns
+  const bossX = canvas.width - 60, bossY = canvas.height/2;
+  const numBullets = 5 + bossPhase * 2;
+  const speed = 150 + bossPhase * 50;
+
+  switch(currentBossDef.pattern){
+    case 'fireballs':
+      for(let i=0;i<numBullets;i++){
+        const angle = Math.random() * Math.PI * 2;
+        spawnBulletAt(angle, speed);
+      }
+      break;
+    case 'dashes':
+      if (bossPhase === 1) {
+        const angle = Math.atan2(player.y - bossY, player.x - bossX);
+        spawnBulletAt(angle, speed * 1.2, 10);
+      } else {
+        for(let i=0;i<numBullets;i++){
+          const angle = Math.atan2(player.y - bossY, player.x - bossX) + (Math.random() - 0.5) * 0.5;
+          spawnBulletAt(angle, speed * 1.2, 10);
+        }
+      }
+      break;
+    case 'poison':
+      for(let i=0;i<numBullets;i++){
+        const angle = Math.random() * Math.PI * 2;
+        spawnBulletAt(angle, speed * 0.8, 12, 'rgba(120,255,150,0.95)');
+      }
+      break;
+    case 'lightning':
+      for(let i=0;i<numBullets;i++){
+        const angle = Math.atan2(player.y - bossY, player.x - bossX) + (i - numBullets/2) * 0.2;
+        spawnBulletAt(angle, speed * 1.5, 8, 'rgba(100,200,255,0.95)');
+      }
+      break;
+    case 'lasers':
+      for(let i=0;i<numBullets;i++){
+        const angle = i * (Math.PI * 2 / numBullets);
+        spawnBulletAt(angle, speed * 1.1, 6, 'rgba(255,150,150,0.95)');
+      }
+      break;
+    case 'spiral':
+      for(let i=0;i<numBullets;i++){
+        const angle = i * (Math.PI * 2 / numBullets) + spiralOffset;
+        spawnBulletAt(angle, speed * 1.1, 6, 'rgba(255,100,255,0.95)');
+      }
+      spiralOffset += 0.2;
+      break;
+    case 'boulder':
+      for(let i=0;i<numBullets;i++){
+        const angle = Math.random() * Math.PI * 2;
+        spawnBulletAt(angle, speed * 0.7, 14, 'rgba(200,140,80,0.95)');
+      }
+      break;
+    case 'lightBurst':
+      for(let i=0;i<numBullets;i++){
+        const angle = i * (Math.PI * 2 / numBullets);
+        spawnBulletAt(angle, speed * 1.3, 8, 'rgba(255,255,150,0.95)');
+      }
+      break;
+    default:
+      // Default attack (simple spread)
+      for(let i=0;i<numBullets;i++){
+        const angle = Math.atan2(player.y - bossY, player.x - bossX) + (i - numBullets/2) * 0.1;
+        spawnBulletAt(angle, speed);
+      }
+      break;
+  }
+}
+
+/* attack mini-game */
+let attackTimer = 0;
+const ATTACK_DURATION = 2.8; // کاهش از 3.2 به 2.8 ثانیه
+function startAttackMiniGame(){
+  if (!attackReady || !bossAlive) return;
+  attackReady = false;
+  attackBtn.disabled = true;
+  retreatBtn.style.display = 'block';
+  timingUI.style.display = 'flex';
+  statusText.innerText = 'حمله کن!';
+  
+  attackTimer = 0;
+  pointerEl.style.left = '0%';
+  
+  // Start timing loop
+  attackCooldownTimer = setInterval(() => {
+    attackTimer += 50 / 1000;
+    const pct = (attackTimer / ATTACK_DURATION) * 100;
+    pointerEl.style.left = Math.min(100, pct) + '%';
+    
+    if (attackTimer >= ATTACK_DURATION){
+      clearInterval(attackCooldownTimer);
+      attackCooldownTimer = null;
+      finishAttack(0); // Miss
+    }
+  }, 50);
+}
+function finishAttack(timing){
+  if (!attackCooldownTimer) return;
+  clearInterval(attackCooldownTimer);
+  attackCooldownTimer = null;
+  timingUI.style.display = 'none';
+  retreatBtn.style.display = 'none';
+
+  let damage = 0;
+  let result = 'Miss';
+  
+  // Timing is a percentage from 0 to 1
+  if (timing >= 0.4 && timing <= 0.6) { // Sweet spot (40% to 60%)
+    const diff = Math.abs(timing - 0.5);
+    if (diff <= 0.025) { // 47.5% to 52.5%
+      damage = 100;
+      result = 'Perfect!';
+      playAttack();
+    } else if (diff <= 0.05) { // 45% to 55%
+      damage = 70;
+      result = 'Great';
+      playAttack();
+    } else { // 40% to 60%
+      damage = 40;
+      result = 'OK';
+    }
+  }
+
+  if (damage > 0){
+    damage *= damageMultiplier();
+    bossHP -= damage;
+    bossFlashTimer = 0.15; // انیمیشن ضربه خوردن باس
+    safeLog(`حمله: ${result} - ${Math.round(damage)} دمیج`);
+    if (bossHP <= 0){ bossHP = 0; updateUI(); endFight(true); return; }
+  } else {
+    safeLog(`حمله: ${result}`);
+  }
+  
+  updateUI();
+  
+  // Start cooldown
+  let cooldownTime = ATTACK_COOLDOWN_MS;
+  const startTime = performance.now();
+  const cooldownInterval = setInterval(() => {
+    const elapsed = performance.now() - startTime;
+    const remaining = cooldownTime - elapsed;
+    const pct = Math.min(100, (elapsed / cooldownTime) * 100);
+    attackCooldownFill.style.width = pct + '%';
+    
+    if (remaining <= 0){
+      clearInterval(cooldownInterval);
+      attackReady = true;
+      attackBtn.disabled = false;
+      statusText.innerText = 'آماده';
+      attackCooldownFill.style.width = '0%';
+    }
+  }, 50);
+}
+
+/* event listeners */
+attackBtn.addEventListener('click', startAttackMiniGame);
+retreatBtn.addEventListener('click', () => finishAttack(0));
+document.addEventListener('keydown', (e) => {
+  if (e.key === ' ' || e.key === 'Space'){
+    e.preventDefault();
+    if (attackCooldownTimer){
+      finishAttack(attackTimer / ATTACK_DURATION);
+    } else if (attackReady && bossAlive){
+      startAttackMiniGame();
+    }
+  }
+  keys[e.key] = true;
+});
+document.addEventListener('keyup', (e) => { keys[e.key] = false; });
+
+buyDCBtn.addEventListener('click', () => {
+  if (coins >= dcCost){
+    coins -= dcCost;
+    dcCount += 1;
+    playerMaxHP += 25;
+    playerHP = playerMaxHP;
+    dcCost = Math.round(dcCost * 1.5);
+    safeLog(`خرید دیتاسنتر موفق! قدرت و HP شما افزایش یافت.`);
+    updateUI();
+  } else {
+    safeLog("رمز ارز کافی نیست!");
+  }
+});
+
+openStagesBtn.addEventListener('click', () => {
+  stagesGrid.innerHTML = '';
+  for(let i=1;i<=TOTAL_STAGES;i++){
+    const isLocked = i > unlockedStage;
+    const boss = bossDefs[(i-1) % bossDefs.length];
+    const btn = document.createElement('button');
+    btn.className = 'btn secondary';
+    btn.style.opacity = isLocked ? 0.4 : 1;
+    btn.style.cursor = isLocked ? 'not-allowed' : 'pointer';
+    btn.innerHTML = `مرحله ${i}<br><span style="font-size:0.8em;color:${boss.color.replace('0.95','0.7')}">${boss.name}</span>`;
+    if (!isLocked) btn.onclick = () => startFight(i);
+    stagesGrid.appendChild(btn);
+  }
+  stageModal.style.display = 'flex';
+  setTimeout(() => stageModal.classList.add('visible'), 10);
+});
+closeStageModal.addEventListener('click', () => {
+  stageModal.classList.remove('visible');
+  setTimeout(() => stageModal.style.display = 'none', 250);
+});
+openLootboxBtn.addEventListener('click', openLootbox);
+
+resetBtn.addEventListener('click', () => {
+  if (confirm("آیا مطمئن هستید؟ تمام پیشرفت شما پاک خواهد شد!")){
+    localStorage.clear();
+    location.reload();
+  }
+});
+
+/* joystick logic */
+const joystickWrap = document.getElementById('joystickWrap');
+const joyBase = document.getElementById('joyBase');
+const joyKnob = document.getElementById('joyKnob');
+let startX = 0, startY = 0;
+let maxDistance = 60;
+
+function handleStart(e){
+  e.preventDefault();
+  ensureAudioResume();
+  joystickActive = true;
+  const touch = e.touches ? e.touches[0] : e;
+  startX = touch.clientX;
+  startY = touch.clientY;
+  joyBase.style.opacity = 1;
+  handleMove(e);
+}
+function handleMove(e){
+  if (!joystickActive) return;
+  e.preventDefault();
+  const touch = e.touches ? e.touches[0] : e;
+  let dx = touch.clientX - startX;
+  let dy = touch.clientY - startY;
+  
+  const distance = Math.min(Math.hypot(dx, dy), maxDistance);
+  const angle = Math.atan2(dy, dx);
+  
+  dx = distance * Math.cos(angle);
+  dy = distance * Math.sin(angle);
+  
+  joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+  
+  joyDir.x = dx / maxDistance;
+  joyDir.y = dy / maxDistance;
+}
+function handleEnd(e){
+  if (!joystickActive) return;
+  e.preventDefault();
+  joystickActive = false;
+  joyKnob.style.transform = 'translate(0, 0)';
+  joyDir.x = 0;
+  joyDir.y = 0;
+  joyBase.style.opacity = 0.95;
+}
+
+joystickWrap.addEventListener('mousedown', handleStart);
+joystickWrap.addEventListener('touchstart', handleStart);
+document.addEventListener('mousemove', handleMove);
+document.addEventListener('touchmove', handleMove);
+document.addEventListener('mouseup', handleEnd);
+document.addEventListener('touchend', handleEnd);
+
+/* initial setup */
+function resizeCanvas(){
+  const container = document.getElementById('arenaContainer');
+  const size = container.clientWidth - 24; // 24 is padding
+  canvas.width = Math.min(720, size);
+  canvas.height = Math.round(canvas.width / 2); // Maintain 2:1 aspect ratio
+  player.x = Math.min(player.x, canvas.width/2 - player.size/2);
+  player.y = Math.min(player.y, canvas.height - player.size/2);
+  maxDistance = joystickWrap.clientWidth / 2;
+  updateUI();
+  render();
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+updateUI();
+
+// Initial render
+render();
+</script>
 </body>
-            </html>
+        </html>
